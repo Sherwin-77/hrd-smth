@@ -2,9 +2,11 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  OneToMany,
   PrimaryColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { Payroll } from '../../payrolls/entities/payroll.entity.js';
 
 export const EmployeeSex = {
   MALE: 'male',
@@ -12,10 +14,9 @@ export const EmployeeSex = {
 } as const;
 
 export type EmployeeSex = (typeof EmployeeSex)[keyof typeof EmployeeSex];
-
 @Entity('employees')
 export class Employee {
-  @PrimaryColumn({ type: 'uuid', default: () => 'uuidv7()' })
+  @PrimaryColumn('uuid')
   id: string;
 
   @Column()
@@ -33,13 +34,13 @@ export class Employee {
   @Column({ type: 'enum', enum: EmployeeSex })
   sex: EmployeeSex;
 
-  @Column({ name: 'birth_date' })
+  @Column({ name: 'birth_date'})
   birthDate: Date;
 
   @Column({ name: 'join_at' })
   joinAt: Date;
 
-  @Column({ name: 'leave_at', nullable: true })
+  @Column({ name: 'leave_at'})
   leaveAt: Date | null;
 
   @CreateDateColumn()
@@ -47,4 +48,8 @@ export class Employee {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+
+  @OneToMany(() => Payroll, (payroll) => payroll.employee)
+  payrolls: Payroll[];
 }

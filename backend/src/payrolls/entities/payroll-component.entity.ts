@@ -11,10 +11,10 @@ export type PayrollComponentStatus = (typeof PayrollComponentStatus)[keyof typeo
 
 @Entity("payroll_components")
 export class PayrollComponent {
-    @PrimaryColumn({type: 'uuid', default: () => 'uuidv7()'})
+    @PrimaryColumn('uuid')
     id: string;
 
-    @Column({name: 'payroll_id', type: 'uuid'})
+    @Column({name: 'payroll_id'})
     payrollId: string;
 
     @Column({
@@ -22,50 +22,41 @@ export class PayrollComponent {
         type: 'decimal',
         'precision': 16,
         'scale': 2,
-        'default': 0.0000
     })
-    basicSalary: number;
+    basicSalary: number = 0.00;
 
     @Column({
         name: 'overtime',
         type: 'decimal',
         'precision': 16,
         'scale': 2,
-        'default': 0.0000
     })
-    overtime: number;
+    overtime: number = 0.00;
 
     @Column({
         name: 'tax',
         type: 'decimal',
         'precision': 16,
         'scale': 2,
-        'default': 0.0000
     })
-    tax : number;
+    tax : number = 0.00;
 
     @Column({
         name: 'bonus',
         type: 'decimal',
         'precision': 16,
         'scale': 2,
-        'default': 0.0000
     })
-    bonus: number;
+    bonus: number = 0.00;
 
     @Column({
         name: 'deduction',
         type: 'decimal',
         'precision': 16,
         'scale': 2,
-        'default': 0.0000
     })
-    deduction: number;
+    deduction: number = 0.00;
 
-    @Column({
-        name: 'date',
-        type: 'date'
-    })
     date: Date;
 
     @Column({
@@ -76,16 +67,14 @@ export class PayrollComponent {
     })
     status: PayrollComponentStatus;
 
-
     @CreateDateColumn()
     createdAt: Date;
     
     @UpdateDateColumn()
-    updatedAt: Date;    
+    updatedAt: Date;   
+     
 
-    @ManyToOne(() => Payroll, (payroll) => payroll.payrollComponents, {
-        onDelete: "CASCADE"
-    })
+    @ManyToOne(() => Payroll, (payroll) => payroll.payrollComponents)
     @JoinColumn({name: 'payroll_id'})
     payroll: Payroll;
 }

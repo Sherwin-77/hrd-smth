@@ -1,5 +1,6 @@
-import { Column, CreateDateColumn, Entity, OneToMany, PrimaryColumn, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryColumn, UpdateDateColumn } from "typeorm";
 import { PayrollComponent } from "./payroll-component.entity.js";
+import { Employee } from "../../employees/entities/employee.entity.js";
 
 export const PayrollStatus = {
     ACTIVE: 'active',
@@ -10,8 +11,11 @@ export type PayrollStatus = (typeof PayrollStatus)[keyof typeof PayrollStatus];
 
 @Entity("payrolls")
 export class Payroll {
-    @PrimaryColumn({type: 'uuid', default: () => 'uuidv7()'})
+    @PrimaryColumn('uuid')
     id: string;
+
+    @Column({name: 'employee_id'})
+    employeeId: string;
 
     @Column({name: 'account_number'})
     accountNumber: string;
@@ -24,28 +28,27 @@ export class Payroll {
         type: 'decimal',
         'precision': 5,
         'scale': 4,
-        'default': 0.0000
     })
-    taxPercentage: number;
+    taxPercentage: number = 0.0000;
 
     @Column({
         name: 'status',
         type: 'enum',
         enum: PayrollStatus,
-        default: PayrollStatus.ACTIVE
     })
-    status: PayrollStatus;
+    status: PayrollStatus = PayrollStatus.ACTIVE;
 
     @CreateDateColumn()
     createdAt: Date;
     
     @UpdateDateColumn()
     updatedAt: Date;
+    
 
+    @ManyToOne(() => Employee, (employee) => employee.payrolls)
+    @JoinColumn({name: 'employee_id'})
+    employee: Employee;
 
-    @OneToMany(() => PayrollComponent, (payrollComponent) => payrollComponent.payroll, {
-        cascade: true,
-        onDelete: 'CASCADE'
-    })
+    @OneToMany(() => PayrollComponent, (payrollComponent) => payrollComponent.payroll)
     payrollComponents: PayrollComponent[]
 }
