@@ -25,6 +25,9 @@ export class CreatePayrollsComponentsTable1790860425100 implements MigrationInte
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(`
+            DROP TABLE payrolls_components;
+        `);
     }
 
 }

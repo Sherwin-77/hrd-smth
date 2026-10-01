@@ -13,6 +13,6 @@ const migrationPath = `./src/database/migrations/${name}`;
 
 try {
   execSync(`typeorm migration:create src/migrations/${migrationPath}`, { stdio: "inherit" });
-} catch (error) {
+} catch {
   process.exit(1);
 }

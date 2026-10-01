@@ -3,7 +3,7 @@ import { MigrationInterface, QueryRunner } from "typeorm";
 export class CreatePayrollsTable1790859904824 implements MigrationInterface {
 
     public async up(queryRunner: QueryRunner): Promise<void> {
-        queryRunner.query(`
+        await queryRunner.query(`
             CREATE TABLE payrolls (
                 "id" uuid PRIMARY KEY DEFAULT uuidv7(),
                 "employee_id" uuid NOT NULL,
@@ -21,7 +21,7 @@ export class CreatePayrollsTable1790859904824 implements MigrationInterface {
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
-        queryRunner.query(`
+        await queryRunner.query(`
             DROP TABLE payrolls;
         `);
     }
