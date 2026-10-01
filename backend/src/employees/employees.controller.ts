@@ -15,6 +15,7 @@ import { EmployeesService, PaginatedEmployees } from './employees.service.js';
 import { CreateEmployeeDto } from './dto/create-employee.dto.js';
 import { FindEmployeesQueryDto } from './dto/find-employees-query.dto.js';
 import { UpdateEmployeeDto } from './dto/update-employee.dto.js';
+import { EmployeeDetailResourceDto } from './dto/employee-detail-resource.dto.js';
 import { Employee } from './entities/employee.entity.js';
 
 @Controller('employees')
@@ -32,7 +33,9 @@ export class EmployeesController {
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string): Promise<Employee> {
+  findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<EmployeeDetailResourceDto> {
     return this.employeesService.findOne(id);
   }
 

@@ -6,12 +6,14 @@ import {
 import { CreateEmployeeDto } from './dto/create-employee.dto.js';
 import { FindEmployeesQueryDto } from './dto/find-employees-query.dto.js';
 import { UpdateEmployeeDto } from './dto/update-employee.dto.js';
-import { InjectRepository } from '@nestjs/typeorm';
+import { EmployeeDetailResourceDto } from './dto/employee-detail-resource.dto.js';
+import { EmployeeIndexResourceDto } from './dto/employee-index-resource.dto.js';
+import { EmployeesRepository } from './employees.repository.js';
 import { Employee } from './entities/employee.entity.js';
-import { ILike, Repository } from 'typeorm';
+import { ILike } from 'typeorm';
 
 export interface PaginatedEmployees {
-  data: Employee[];
+  data: EmployeeIndexResourceDto[];
   meta: {
     total: number;
     page: number;
@@ -22,10 +24,7 @@ export interface PaginatedEmployees {
 
 @Injectable()
 export class EmployeesService {
-  constructor(
-    @InjectRepository(Employee)
-    private readonly employees: Repository<Employee>,
-  ) {}
+  constructor(private readonly employees: EmployeesRepository) {}
 
   async create(createEmployeeDto: CreateEmployeeDto): Promise<Employee> {
     await this.assertEmailAvailable(createEmployeeDto.email);
@@ -58,7 +57,7 @@ export class EmployeesService {
     const order = query.order ?? 'DESC';
 
     const search = query.search?.trim();
-    const [data, total] = await this.employees.findAndCount({
+    const [employees, total] = await this.employees.findAndCount({
       where: search
         ? [{ name: ILike(`%${search}%`) }, { email: ILike(`%${search}%`) }]
         : undefined,
@@ -68,7 +67,9 @@ export class EmployeesService {
     });
 
     return {
-      data,
+      data: employees.map((employee) =>
+        EmployeeIndexResourceDto.fromEntity(employee),
+      ),
       meta: {
         total,
         page,
@@ -78,19 +79,21 @@ export class EmployeesService {
     };
   }
 
-  async findOne(id: string): Promise<Employee> {
-    const employee = await this.employees.findOneBy({ id });
+  async findOne(id: string): Promise<EmployeeDetailResourceDto> {
+    const employee = await this.employees.findOneWithActivePayroll(id);
+
     if (!employee) {
       throw new NotFoundException(`Employee #${id} not found`);
     }
-    return employee;
+
+    return EmployeeDetailResourceDto.fromEntity(employee);
   }
 
   async update(
     id: string,
     updateEmployeeDto: UpdateEmployeeDto,
   ): Promise<Employee> {
-    const employee = await this.findOne(id);
+    const employee = await this.findOneEntityOrFail(id);
 
     if (updateEmployeeDto.email && updateEmployeeDto.email !== employee.email) {
       await this.assertEmailAvailable(updateEmployeeDto.email);
@@ -115,8 +118,16 @@ export class EmployeesService {
   }
 
   async remove(id: string): Promise<void> {
-    const employee = await this.findOne(id);
+    const employee = await this.findOneEntityOrFail(id);
     await this.employees.remove(employee);
+  }
+
+  private async findOneEntityOrFail(id: string): Promise<Employee> {
+    const employee = await this.employees.findOneBy({ id });
+    if (!employee) {
+      throw new NotFoundException(`Employee #${id} not found`);
+    }
+    return employee;
   }
 
   private async assertEmailAvailable(email: string): Promise<void> {
