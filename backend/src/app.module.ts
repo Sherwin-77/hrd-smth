@@ -18,7 +18,7 @@ import { PayrollsModule } from './payrolls/payrolls.module.js';
       username: process.env.DB_USER || 'postgres',
       password: process.env.DB_PASSWORD || 'secret',
       database: process.env.DB_NAME || 'hrd',
-      entities: ['src/**/*.entity{.ts,.js}'],
+      autoLoadEntities: true,
       synchronize: false,
     }),
     EmployeesModule,
