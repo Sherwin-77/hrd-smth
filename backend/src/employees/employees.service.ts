@@ -1,0 +1,141 @@
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { CreateEmployeeDto } from './dto/create-employee.dto.js';
+import { FindEmployeesQueryDto } from './dto/find-employees-query.dto.js';
+import { UpdateEmployeeDto } from './dto/update-employee.dto.js';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Employee } from './entities/employee.entity.js';
+import { ILike, Repository } from 'typeorm';
+
+export interface PaginatedEmployees {
+  data: Employee[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+@Injectable()
+export class EmployeesService {
+  constructor(
+    @InjectRepository(Employee)
+    private readonly employees: Repository<Employee>,
+  ) {}
+
+  async create(createEmployeeDto: CreateEmployeeDto): Promise<Employee> {
+    await this.assertEmailAvailable(createEmployeeDto.email);
+
+    const employee = this.employees.create({
+      name: createEmployeeDto.name,
+      email: createEmployeeDto.email,
+      phoneNumber: createEmployeeDto.phoneNumber,
+      address: createEmployeeDto.address,
+      sex: createEmployeeDto.sex,
+      birthDate: new Date(createEmployeeDto.birthDate),
+      joinAt: new Date(createEmployeeDto.joinAt),
+      leaveAt: createEmployeeDto.leaveAt
+        ? new Date(createEmployeeDto.leaveAt)
+        : null,
+    });
+
+    try {
+      return await this.employees.save(employee);
+    } catch (error) {
+      this.throwIfUniqueViolation(error, createEmployeeDto.email);
+      throw error;
+    }
+  }
+
+  async findAll(query: FindEmployeesQueryDto): Promise<PaginatedEmployees> {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 10;
+    const sortBy = query.sortBy ?? 'createdAt';
+    const order = query.order ?? 'DESC';
+
+    const search = query.search?.trim();
+    const [data, total] = await this.employees.findAndCount({
+      where: search
+        ? [{ name: ILike(`%${search}%`) }, { email: ILike(`%${search}%`) }]
+        : undefined,
+      order: { [sortBy]: order },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async findOne(id: string): Promise<Employee> {
+    const employee = await this.employees.findOneBy({ id });
+    if (!employee) {
+      throw new NotFoundException(`Employee #${id} not found`);
+    }
+    return employee;
+  }
+
+  async update(
+    id: string,
+    updateEmployeeDto: UpdateEmployeeDto,
+  ): Promise<Employee> {
+    const employee = await this.findOne(id);
+
+    if (updateEmployeeDto.email && updateEmployeeDto.email !== employee.email) {
+      await this.assertEmailAvailable(updateEmployeeDto.email);
+    }
+
+    const { birthDate, joinAt, leaveAt, ...rest } = updateEmployeeDto;
+    const merged = this.employees.merge(employee, {
+      ...rest,
+      ...(birthDate !== undefined ? { birthDate: new Date(birthDate) } : {}),
+      ...(joinAt !== undefined ? { joinAt: new Date(joinAt) } : {}),
+      ...(leaveAt !== undefined
+        ? { leaveAt: leaveAt ? new Date(leaveAt) : null }
+        : {}),
+    });
+
+    try {
+      return await this.employees.save(merged);
+    } catch (error) {
+      this.throwIfUniqueViolation(error, updateEmployeeDto.email);
+      throw error;
+    }
+  }
+
+  async remove(id: string): Promise<void> {
+    const employee = await this.findOne(id);
+    await this.employees.remove(employee);
+  }
+
+  private async assertEmailAvailable(email: string): Promise<void> {
+    const existing = await this.employees.findOneBy({ email });
+    if (existing) {
+      throw new ConflictException(`Email ${email} is already in use`);
+    }
+  }
+
+  private throwIfUniqueViolation(error: unknown, email?: string): void {
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      error.code === '23505'
+    ) {
+      throw new ConflictException(
+        `Email ${email ?? 'provided'} is already in use`,
+      );
+    }
+  }
+}

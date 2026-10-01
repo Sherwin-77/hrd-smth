@@ -1,0 +1,43 @@
+services:
+  db:
+    image: postgres:18-alpine
+    container_name: app_database
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: hrd
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql
+
+  backend:
+    build:
+      context: ./backend
+    container_name: app_backend
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=secret
+      - DB_NAME=hrd
+    depends_on:
+      - db
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: app_frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:3001 
+      - INTERNAL_API_URL=http://backend:3001 
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
