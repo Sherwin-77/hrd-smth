@@ -10,7 +10,7 @@ import { EmployeeDetailResourceDto } from './dto/employee-detail-resource.dto.js
 import { EmployeeIndexResourceDto } from './dto/employee-index-resource.dto.js';
 import { EmployeesRepository } from './employees.repository.js';
 import { Employee } from './entities/employee.entity.js';
-import { ILike } from 'typeorm';
+import { Brackets, ILike } from 'typeorm';
 
 export interface PaginatedEmployees {
   data: EmployeeIndexResourceDto[];
@@ -57,14 +57,23 @@ export class EmployeesService {
     const order = query.order ?? 'DESC';
 
     const search = query.search?.trim();
-    const [employees, total] = await this.employees.findAndCount({
-      where: search
-        ? [{ name: ILike(`%${search}%`) }, { email: ILike(`%${search}%`) }]
-        : undefined,
-      order: { [sortBy]: order },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
+
+    const queryBuilder = this.employees.createQueryBuilder('employee');
+
+    if (search) {
+      queryBuilder.where(
+        new Brackets((qb) => {
+          qb.where('employee.name ILIKE :search', { search: `%${search}%` })
+            .orWhere('employee.email ILIKE :search', { search: `%${search}%` });
+        }),
+      );
+    }
+
+    queryBuilder.orderBy(`employee.${sortBy}`, order)
+      .skip((page - 1) * limit)
+      .take(limit);
+    
+    const [employees, total] = await queryBuilder.getManyAndCount();
 
     return {
       data: employees.map((employee) =>
