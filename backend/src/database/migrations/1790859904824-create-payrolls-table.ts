@@ -5,8 +5,8 @@ export class CreatePayrollsTable1790859904824 implements MigrationInterface {
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`
             CREATE TABLE payrolls (
-                "id" uuid NOT NULL DEFAULT uuidv7(),
-                "employee_id" uuid NOT NULL,
+                "id" UUID NOT NULL DEFAULT UUIDV7(),
+                "employee_id" UUID NOT NULL,
                 "account_number" VARCHAR(255) NOT NULL,
                 "account_name" VARCHAR(255) NOT NULL,
                 "tax_percentage" DECIMAL(5, 4) NOT NULL,
