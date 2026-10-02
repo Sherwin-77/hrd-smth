@@ -10,7 +10,7 @@ import { EmployeeDetailResourceDto } from './dto/employee-detail-resource.dto.js
 import { EmployeeIndexResourceDto } from './dto/employee-index-resource.dto.js';
 import { EmployeesRepository } from './employees.repository.js';
 import { Employee } from './entities/employee.entity.js';
-import { Brackets, ILike } from 'typeorm';
+import { Brackets } from 'typeorm';
 
 export interface PaginatedEmployees {
   data: EmployeeIndexResourceDto[];
