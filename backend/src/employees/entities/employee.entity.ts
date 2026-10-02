@@ -52,4 +52,7 @@ export class Employee {
 
   @OneToMany(() => Payroll, (payroll) => payroll.employee)
   payrolls: Payroll[];
+
+  
+  activePayroll?: Payroll | null;
 }

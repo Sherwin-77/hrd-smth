@@ -9,14 +9,10 @@ export class EmployeesRepository extends Repository<Employee> {
     super(Employee, dataSource.createEntityManager());
   }
 
-  /**
-   * Loads a single employee together with its active payroll, if any.
-   * The join is filtered to `payroll.status = 'active'`, so the
-   * returned `payrolls` holds at most one record by invariant.
-   */
   findOneWithActivePayroll(id: string): Promise<Employee | null> {
     return this.createQueryBuilder('employee')
-      .leftJoinAndSelect(
+      .leftJoinAndMapOne(
+        'employee.activePayroll',
         'employee.payrolls',
         'payroll',
         'payroll.status = :activeStatus',
