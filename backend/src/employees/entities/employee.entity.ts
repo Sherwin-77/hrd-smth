@@ -6,7 +6,7 @@ import {
   PrimaryColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Payroll } from '@src/payrolls/entities/payroll.entity.js';
+import { Payroll } from '#payrolls/entities/payroll.entity.js';
 
 export const EmployeeSex = {
   MALE: 'male',

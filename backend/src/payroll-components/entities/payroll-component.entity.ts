@@ -1,5 +1,5 @@
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryColumn, UpdateDateColumn } from "typeorm";
-import { Payroll } from "@src/payrolls/entities/payroll.entity.js";
+import { Payroll } from "#payrolls/entities/payroll.entity.js";
 
 export const PayrollComponentStatus = {
     PENDING: 'pending',
