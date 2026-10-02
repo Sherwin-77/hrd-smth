@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryColumn, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryColumn, type Relation, UpdateDateColumn } from "typeorm";
 import { PayrollComponent } from "#payroll-components/entities/payroll-component.entity.js";
 import { Employee } from "#employees/entities/employee.entity.js";
 
@@ -14,7 +14,7 @@ export class Payroll {
     @PrimaryColumn('uuid')
     id: string;
 
-    @Column({name: 'employee_id'})
+    @Column({name: 'employee_id', type: 'uuid'})
     employeeId: string;
 
     @Column({name: 'account_number'})
@@ -47,8 +47,8 @@ export class Payroll {
 
     @ManyToOne(() => Employee, (employee) => employee.payrolls)
     @JoinColumn({name: 'employee_id'})
-    employee: Employee;
+    employee: Relation<Employee>;
 
     @OneToMany(() => PayrollComponent, (payrollComponent) => payrollComponent.payroll)
-    payrollComponents: PayrollComponent[]
+    payrollComponents: Relation<PayrollComponent>[]
 }

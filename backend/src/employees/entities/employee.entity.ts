@@ -4,6 +4,7 @@ import {
   Entity,
   OneToMany,
   PrimaryColumn,
+  type Relation,
   UpdateDateColumn,
 } from 'typeorm';
 import { Payroll } from '#payrolls/entities/payroll.entity.js';
@@ -19,40 +20,38 @@ export class Employee {
   @PrimaryColumn('uuid')
   id: string;
 
-  @Column()
+  @Column({name: 'name'})
   name: string;
 
-  @Column({ unique: true })
+  @Column({ name: 'email', unique: true })
   email: string;
 
   @Column({ name: 'phone_number' })
   phoneNumber: string;
 
-  @Column()
+  @Column({name: 'address'})
   address: string;
 
-  @Column({ type: 'enum', enum: EmployeeSex })
+  @Column({ name: 'sex', type: 'enum', enum: EmployeeSex })
   sex: EmployeeSex;
 
-  @Column({ name: 'birth_date'})
+  @Column({ name: 'birth_date', type: 'date' })
   birthDate: Date;
 
-  @Column({ name: 'join_at' })
+  @Column({ name: 'join_at', type: 'timestamp with time zone' })
   joinAt: Date;
 
-  @Column({ name: 'leave_at'})
+  @Column({ name: 'leave_at', type: 'date' })
   leaveAt: Date | null;
 
-  @CreateDateColumn()
+  @CreateDateColumn({name: 'created_at'})
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({name: 'updated_at'})
   updatedAt: Date;
 
-
   @OneToMany(() => Payroll, (payroll) => payroll.employee)
-  payrolls: Payroll[];
+  payrolls: Relation<Payroll>[];
 
-  
-  activePayroll?: Payroll | null;
+  activePayroll: Payroll | null;
 }

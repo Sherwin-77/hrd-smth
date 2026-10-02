@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryColumn, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryColumn, type Relation, UpdateDateColumn } from "typeorm";
 import { Payroll } from "#payrolls/entities/payroll.entity.js";
 
 export const PayrollComponentStatus = {
@@ -14,7 +14,7 @@ export class PayrollComponent {
     @PrimaryColumn('uuid')
     id: string;
 
-    @Column({name: 'payroll_id'})
+    @Column({name: 'payroll_id', type: 'uuid'})
     payrollId: string;
 
     @Column({
@@ -57,6 +57,7 @@ export class PayrollComponent {
     })
     deduction: number = 0.00;
 
+    @Column({name: 'date', type: 'date'})
     date: Date;
 
     @Column({
@@ -67,14 +68,14 @@ export class PayrollComponent {
     })
     status: PayrollComponentStatus;
 
-    @CreateDateColumn()
+    @CreateDateColumn({name: 'created_at'})
     createdAt: Date;
     
-    @UpdateDateColumn()
+    @UpdateDateColumn({name: 'updated_at'})
     updatedAt: Date;   
      
 
     @ManyToOne(() => Payroll, (payroll) => payroll.payrollComponents)
     @JoinColumn({name: 'payroll_id'})
-    payroll: Payroll;
+    payroll: Relation<Payroll>;
 }
