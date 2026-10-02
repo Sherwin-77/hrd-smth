@@ -31,7 +31,7 @@ export class EmployeesService {
 
     const employee = this.employees.create({
       name: createEmployeeDto.name,
-      email: createEmployeeDto.email,
+      email: normalize(createEmployeeDto.email),
       phoneNumber: createEmployeeDto.phoneNumber,
       address: createEmployeeDto.address,
       sex: createEmployeeDto.sex,
@@ -104,6 +104,10 @@ export class EmployeesService {
   ): Promise<Employee> {
     const employee = await this.findOneEntityOrFail(id);
 
+    if (updateEmployeeDto.email) {
+      updateEmployeeDto.email = normalize(updateEmployeeDto.email);
+    }
+
     if (updateEmployeeDto.email && updateEmployeeDto.email !== employee.email) {
       await this.assertEmailAvailable(updateEmployeeDto.email);
     }
@@ -159,3 +163,5 @@ export class EmployeesService {
     }
   }
 }
+
+const normalize = (value: string) => value.trim().normalize('NFC').toLowerCase();
