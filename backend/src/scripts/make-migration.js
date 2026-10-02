@@ -9,10 +9,10 @@ if (!name) {
 }
 
 // Destination path where you want migrations created
-const migrationPath = `./src/database/migrations/${name}`;
+const migrationPath = `src/migrations/${name}`;
 
 try {
-  execSync(`typeorm migration:create src/migrations/${migrationPath}`, { stdio: "inherit" });
+  execSync(`typeorm migration:create ${migrationPath}`, { stdio: "inherit" });
 } catch {
   process.exit(1);
 }

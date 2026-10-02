@@ -4,8 +4,8 @@ export class CreatePayrollsComponentsTable1790860425100 implements MigrationInte
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`
-            CREATE TABLE payrolls_components (
-                "id" UUID DEFAULT uuidv7(),
+            CREATE TABLE payroll_components (
+                "id" UUID NOT NULL DEFAULT UUIDV7(),
                 "payroll_id" UUID NOT NULL,
                 "basic_salary" DECIMAL(16, 2) NOT NULL,
                 "overtime" DECIMAL(16, 2) NOT NULL,
@@ -18,15 +18,15 @@ export class CreatePayrollsComponentsTable1790860425100 implements MigrationInte
                 "updated_at" TIMESTAMPTZ(6),
 
 
-                CONSTRAINT "payrolls_components_pkey" PRIMARY KEY (id),
-                CONSTRAINT "payrolls_components_payroll_id_fkey" FOREIGN KEY (payroll_id) REFERENCES payrolls(id) ON DELETE CASCADE
+                CONSTRAINT "payroll_components_pkey" PRIMARY KEY ("id"),
+                CONSTRAINT "payroll_components_payroll_id_fkey" FOREIGN KEY ("payroll_id") REFERENCES payrolls("id") ON DELETE CASCADE
             );
         `);
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`
-            DROP TABLE payrolls_components;
+            DROP TABLE payroll_components;
         `);
     }
 
