@@ -1,6 +1,6 @@
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryColumn, UpdateDateColumn } from "typeorm";
 import { PayrollComponent } from "./payroll-component.entity.js";
-import { Employee } from "../../employees/entities/employee.entity.js";
+import { Employee } from "@src/employees/entities/employee.entity.js";
 
 export const PayrollStatus = {
     ACTIVE: 'active',

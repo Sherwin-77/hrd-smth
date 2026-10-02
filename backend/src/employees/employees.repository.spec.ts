@@ -1,7 +1,7 @@
 import { vi } from 'vitest';
 import { EmployeesRepository } from './employees.repository.js';
 import { Employee } from './entities/employee.entity.js';
-import { PayrollStatus } from '../payrolls/entities/payroll.entity.js';
+import { PayrollStatus } from '@src/payrolls/entities/payroll.entity.js';
 
 describe('EmployeesRepository', () => {
   let repository: EmployeesRepository;

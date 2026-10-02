@@ -1,7 +1,7 @@
 import {
   Payroll,
   PayrollStatus,
-} from '../../payrolls/entities/payroll.entity.js';
+} from '@src/payrolls/entities/payroll.entity.js';
 
 export class ActivePayrollResourceDto {
   id: string;

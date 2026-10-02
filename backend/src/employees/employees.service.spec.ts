@@ -4,7 +4,10 @@ import { vi } from 'vitest';
 import { EmployeesService } from './employees.service.js';
 import { EmployeesRepository } from './employees.repository.js';
 import { Employee, EmployeeSex } from './entities/employee.entity.js';
-import { Payroll, PayrollStatus } from '../payrolls/entities/payroll.entity.js';
+import {
+  Payroll,
+  PayrollStatus,
+} from '@src/payrolls/entities/payroll.entity.js';
 
 describe('EmployeesService', () => {
   let service: EmployeesService;

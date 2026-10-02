@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource, Repository } from 'typeorm';
 import { Employee } from './entities/employee.entity.js';
-import { PayrollStatus } from '../payrolls/entities/payroll.entity.js';
+import { PayrollStatus } from '@src/payrolls/entities/payroll.entity.js';
 
 @Injectable()
 export class EmployeesRepository extends Repository<Employee> {
