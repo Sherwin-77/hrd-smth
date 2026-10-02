@@ -13,20 +13,21 @@ The backend already has an HR domain model: `employees` is fully implemented, wh
 ## Backend
 
 - **ESM, so relative imports must carry the `.js` extension**, even when importing a `.ts` file: `import { AppModule } from './app.module.js'`. `package.json` has `"type": "module"` and `tsconfig.json` uses `module`/`moduleResolution: nodenext`.
+- Backend path alias is `#*` → `./src/*`, wired through **both** `tsconfig.json` (`paths`) and `package.json` (`imports`). Import via `#...` with the `.js` suffix: `import { Payroll } from '#payrolls/entities/payroll.entity.js'`.
 - **Tests are Vitest, not Jest** (the README still claims the old Nest defaults). `npm test` is `vitest run` over `**/*.spec.ts`; `npm run test:e2e` uses `vitest.config.e2e.ts` over `**/*.e2e-spec.ts`. Globals are enabled, so `describe`/`it`/`expect` need no import.
-- The e2e suite imports `AppModule`, so it needs a live Postgres. Unit specs do not — the shipped specs (5 files, 15 tests) pass with no DB running.
+- The e2e suite imports `AppModule`, so it needs a live Postgres. Unit specs do not — the shipped specs (8 files, 22 tests) run with no DB, but 5 currently fail on query-builder mocks (see state note). The base e2e (`test/app.e2e-spec.ts`, `GET /`) passes on a host with live Postgres (user-verified 2026-10-02); in a sandbox with no DB it fails with `ECONNREFUSED` as expected.
 - **There is no `typecheck` script.** `npm run build` (`nest build`, `tsc` under the hood) is the typecheck. `tsconfig.build.json` excludes `test/` and `**/*spec.ts`, so a green build does not typecheck tests.
 - Lint is **oxlint with type-aware rules**, not eslint: `npm run lint` → `oxlint --type-aware src/ test/`. `.oxlintrc.json` sets `no-floating-promises: error` and turns `no-explicit-any` off.
 - Format with prettier (`singleQuote`, `trailingComma: all`). `npm run format` globs `src/**`, `test/**`, and the root-level `data-source.ts`.
 - `main.ts` calls `app.enableCors()` with no origin config, so any frontend origin is allowed.
-- Domain state: `employees` is fully implemented (TypeORM-backed CRUD, paginated `GET /employees` with search, unique-email guard, uuid ids). `payrolls` has entities (`Payroll`, `PayrollComponent`) but the service is still Nest-generated stubs returning strings — and the controller coerces `+id` while the entity PK is uuid, so treat payrolls as unbuilt.
+- Domain state: `employees` is fully implemented (TypeORM-backed CRUD, paginated `GET /employees` with search, unique-email guard, uuid ids). `payrolls` has entities (`Payroll`, `PayrollComponent`) but the service is still Nest-generated stubs returning strings — and the controller coerces `+id` while the entity PK is uuid, so treat payrolls as unbuilt. Entities were fixed 2026-10-02: the duplicate `payrolls/entities/payroll-component.entity.ts` is gone (canonical is `payroll-components/entities/payroll-component.entity.ts`), columns use explicit snake_case names with `Relation<>` types, and `payroll_components.date` now has a `@Column`.
 
 ### Database
 
 - TypeORM CLI scripts use the ESM runner (`typeorm-ts-node-esm -d ./data-source.ts`), which loads the `.ts` data source correctly — the previous `typeorm-ts-node-commonjs` runner died with `ERR_UNKNOWN_FILE_EXTENSION`. `make:migration`, `migrate:up`, and `migrate:down` still need a live Postgres (they fail with `ECONNREFUSED` without one), so do not assume a schema change was applied just because the script was invoked.
 - DB config is **duplicated** in two files that must stay in sync: `TypeOrmModule.forRoot(...)` in `src/app.module.ts` and the `DataSource` in `data-source.ts`. Env is read straight off `process.env` (`DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`), not via `ConfigService`.
-- `synchronize: false` and `migrationsRun` is never set, so the app neither auto-creates the schema nor auto-applies migrations on boot. `src/migrations/` does not exist yet.
-- Entity discovery uses the glob `src/**/*.entity{.ts,.js}`, so entities must be named `foo.entity.ts` and the glob is relative to the process CWD.
+- `synchronize: false` and `migrationsRun` is never set, so the app neither auto-creates the schema nor auto-applies migrations on boot. `src/database/migrations/` holds 3 migrations (`employees`, `payrolls`, `payroll_components`, all `UUIDV7()` defaults) and `data-source.ts` globs `src/database/migrations/*{.ts,.js}`. Warning: `src/scripts/make-migration.js` still generates into stale `src/migrations/${name}`, which the glob misses — fix the script before creating new migrations.
+- Runtime entity loading is via `autoLoadEntities: true` in `src/app.module.ts` (entities registered through `TypeOrmModule.forFeature`); `data-source.ts` currently sets no `entities` array (migration CLI only), so the old `src/**/*.entity` glob note no longer applies.
 - `dotenv` (`^18.0.5`) is a declared dependency; `data-source.ts` imports it via `dotenv/config`.
 - `@casl/ability` is installed but unused anywhere in `src/`; treat authorization as unbuilt.
 - In `docker-compose.yml` the `db` service has a `pg_isready` healthcheck and `backend` waits on it (`condition: service_healthy`), so the backend no longer boots against a Postgres that is not ready yet.
@@ -54,7 +55,7 @@ The backend already has an HR domain model: `employees` is fully implemented, wh
 
 Verification order that matters: `npm run build` → `npm run lint` → `npm test` in `backend/`, then `npx tsc --noEmit` → `npm run lint` in `frontend/`. There is no CI to catch omissions for you.
 
-Note on this workspace's current state (verified 2026-10-01): `npm run build`, `npm run lint`, and `npm test` (5 files, 15 tests) all pass in `backend/` — the old missing-native-binding failures no longer occur. Frontend `npx tsc --noEmit` was not re-verified.
+Note on this workspace's current state (verified 2026-10-02): `npm run build` and `npm run lint` (warnings only, no errors) pass in `backend/`; `npm test` runs 8 files / 22 tests with 5 failing on query-builder mocks (`employees.repository.spec` ×2, `employees.service.spec` ×3). The base e2e (`GET /`) passes on a host with live Postgres (user-verified 2026-10-02). Frontend `npx tsc --noEmit` was not re-verified.
 
 ## Ports and env
 
