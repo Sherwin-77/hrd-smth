@@ -5,7 +5,7 @@ import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { EmployeesModule } from './employees/employees.module.js';
 import { PayrollsModule } from './payrolls/payrolls.module.js';
-import { PayrollComponentsModule } from './payroll-components/payroll-components.module.js';
+import { PayslipsModule } from './payslips/payslips.module.js';
 
 @Module({
   controllers: [AppController],
@@ -24,7 +24,7 @@ import { PayrollComponentsModule } from './payroll-components/payroll-components
     }),
     EmployeesModule,
     PayrollsModule,
-    PayrollComponentsModule,
+    PayslipsModule,
   ],
 })
 export class AppModule {}

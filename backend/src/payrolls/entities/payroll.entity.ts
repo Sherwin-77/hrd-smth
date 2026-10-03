@@ -1,6 +1,6 @@
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryColumn, type Relation, UpdateDateColumn } from "typeorm";
-import { PayrollComponent } from "#payroll-components/entities/payroll-component.entity.js";
 import { Employee } from "#employees/entities/employee.entity.js";
+import { Payslip } from "#payslips/entities/payslip.entity.js";
 
 export const PayrollStatus = {
     ACTIVE: 'active',
@@ -49,6 +49,6 @@ export class Payroll {
     @JoinColumn({name: 'employee_id'})
     employee: Relation<Employee>;
 
-    @OneToMany(() => PayrollComponent, (payrollComponent) => payrollComponent.payroll)
-    payrollComponents: Relation<PayrollComponent>[]
+    @OneToMany(() => Payslip, (payslip) => payslip.payroll)
+    payslips: Relation<Payslip>[]
 }

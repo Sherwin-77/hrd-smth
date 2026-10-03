@@ -1,16 +1,16 @@
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryColumn, type Relation, UpdateDateColumn } from "typeorm";
 import { Payroll } from "#payrolls/entities/payroll.entity.js";
 
-export const PayrollComponentStatus = {
+export const PayslipStatus = {
     PENDING: 'pending',
     APPROVED: 'approved',
     REJECTED: 'rejected',
 } as const;
 
-export type PayrollComponentStatus = (typeof PayrollComponentStatus)[keyof typeof PayrollComponentStatus];
+export type PayslipStatus = (typeof PayslipStatus)[keyof typeof PayslipStatus];
 
-@Entity("payroll_components")
-export class PayrollComponent {
+@Entity("payslips")
+export class Payslip {
     @PrimaryColumn('uuid')
     id: string;
 
@@ -63,10 +63,10 @@ export class PayrollComponent {
     @Column({
         name: 'status',
         type: 'enum',
-        enum: PayrollComponentStatus,
-        default: PayrollComponentStatus.PENDING
+        enum: PayslipStatus,
+        default: PayslipStatus.PENDING
     })
-    status: PayrollComponentStatus;
+    status: PayslipStatus;
 
     @CreateDateColumn({name: 'created_at'})
     createdAt: Date;
@@ -75,7 +75,7 @@ export class PayrollComponent {
     updatedAt: Date;   
      
 
-    @ManyToOne(() => Payroll, (payroll) => payroll.payrollComponents)
+    @ManyToOne(() => Payroll, (payroll) => payroll.payslips)
     @JoinColumn({name: 'payroll_id'})
     payroll: Relation<Payroll>;
 }

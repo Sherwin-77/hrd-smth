@@ -1,10 +1,10 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class CreatePayrollsComponentsTable1790860425100 implements MigrationInterface {
+export class CreatePayslipsTable1790860425100 implements MigrationInterface {
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`
-            CREATE TABLE payroll_components (
+            CREATE TABLE payslips (
                 "id" UUID NOT NULL DEFAULT UUIDV7(),
                 "payroll_id" UUID NOT NULL,
                 "basic_salary" DECIMAL(16, 2) NOT NULL,
@@ -17,16 +17,15 @@ export class CreatePayrollsComponentsTable1790860425100 implements MigrationInte
                 "created_at" TIMESTAMPTZ(6),
                 "updated_at" TIMESTAMPTZ(6),
 
-
-                CONSTRAINT "payroll_components_pkey" PRIMARY KEY ("id"),
-                CONSTRAINT "payroll_components_payroll_id_fkey" FOREIGN KEY ("payroll_id") REFERENCES payrolls("id") ON DELETE CASCADE
+                CONSTRAINT "payslips_pkey" PRIMARY KEY ("id"),
+                CONSTRAINT "payslips_payroll_id_fkey" FOREIGN KEY ("payroll_id") REFERENCES payrolls("id") ON DELETE CASCADE
             );
         `);
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`
-            DROP TABLE payroll_components;
+            DROP TABLE payslips;
         `);
     }
 
