@@ -20,16 +20,23 @@ export class Employee {
   @PrimaryColumn('uuid')
   id: string;
 
-  @Column({name: 'name'})
+  @Column({ name: 'name' })
   name: string;
 
   @Column({ name: 'email', unique: true })
   email: string;
 
+  @Column({
+    name: 'password_hash',
+    length: 255,
+    select: false,
+  })
+  passwordHash: string;
+
   @Column({ name: 'phone_number' })
   phoneNumber: string;
 
-  @Column({name: 'address'})
+  @Column({ name: 'address' })
   address: string;
 
   @Column({ name: 'sex', type: 'enum', enum: EmployeeSex })
@@ -44,10 +51,10 @@ export class Employee {
   @Column({ name: 'leave_at', type: 'date' })
   leaveAt: Date | null;
 
-  @CreateDateColumn({name: 'created_at'})
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn({name: 'updated_at'})
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
   @OneToMany(() => Payroll, (payroll) => payroll.employee)

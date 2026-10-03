@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { AuthenticationGuard } from '@nestjs/authentication';
 import { EmployeesController } from './employees.controller.js';
 import { EmployeesService } from './employees.service.js';
 import { EmployeeSex } from './entities/employee.entity.js';
@@ -26,7 +27,10 @@ describe('EmployeesController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [EmployeesController],
       providers: [{ provide: EmployeesService, useValue: service }],
-    }).compile();
+    })
+      .overrideGuard(AuthenticationGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<EmployeesController>(EmployeesController);
   });
@@ -39,6 +43,7 @@ describe('EmployeesController', () => {
     const dto = {
       name: 'Jane Doe',
       email: 'jane@example.com',
+      password: 'supersecret1',
       phoneNumber: '08123456789',
       address: 'Jakarta',
       sex: EmployeeSex.FEMALE,

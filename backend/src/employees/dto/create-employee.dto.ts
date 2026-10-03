@@ -6,6 +6,7 @@ import {
   IsOptional,
   IsString,
   MaxLength,
+  MinLength,
 } from 'class-validator';
 import { EmployeeSex } from '../entities/employee.entity.js';
 
@@ -18,6 +19,12 @@ export class CreateEmployeeDto {
   @IsEmail()
   @MaxLength(255)
   email: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(8)
+  @MaxLength(128)
+  password: string;
 
   @IsString()
   @IsNotEmpty()

@@ -10,7 +10,9 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
+import { AuthenticationGuard } from '@nestjs/authentication';
 import { EmployeesService, PaginatedEmployees } from './employees.service.js';
 import { CreateEmployeeDto } from './dto/create-employee.dto.js';
 import { FindEmployeesQueryDto } from './dto/find-employees-query.dto.js';
@@ -19,6 +21,7 @@ import { EmployeeDetailResourceDto } from './dto/employee-detail-resource.dto.js
 import { Employee } from './entities/employee.entity.js';
 
 @Controller('employees')
+@UseGuards(AuthenticationGuard)
 export class EmployeesController {
   constructor(private readonly employeesService: EmployeesService) {}
 

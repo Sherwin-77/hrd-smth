@@ -1,13 +1,11 @@
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { PasswordHasher } from '@nestjs/authentication';
 import { vi } from 'vitest';
 import { EmployeesService } from './employees.service.js';
 import { EmployeesRepository } from './employees.repository.js';
 import { Employee, EmployeeSex } from './entities/employee.entity.js';
-import {
-  Payroll,
-  PayrollStatus,
-} from '#payrolls/entities/payroll.entity.js';
+import { Payroll, PayrollStatus } from '#payrolls/entities/payroll.entity.js';
 
 describe('EmployeesService', () => {
   let service: EmployeesService;
@@ -47,6 +45,7 @@ describe('EmployeesService', () => {
   const createDto = {
     name: employee.name,
     email: employee.email,
+    password: 'supersecret1',
     phoneNumber: employee.phoneNumber,
     address: employee.address,
     sex: employee.sex,
@@ -73,6 +72,7 @@ describe('EmployeesService', () => {
       providers: [
         EmployeesService,
         { provide: EmployeesRepository, useValue: repository },
+        { provide: PasswordHasher, useValue: new PasswordHasher({ logN: 10 }) },
       ],
     }).compile();
 

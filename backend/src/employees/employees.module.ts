@@ -9,5 +9,6 @@ import { Employee } from './entities/employee.entity.js';
   imports: [TypeOrmModule.forFeature([Employee])],
   controllers: [EmployeesController],
   providers: [EmployeesService, EmployeesRepository],
+  exports: [EmployeesService, EmployeesRepository],
 })
 export class EmployeesModule {}

@@ -26,10 +26,12 @@
     "typeorm": "typeorm-ts-node-esm -d ./data-source.ts",
     "make:migration": "node ./src/scripts/make-migration.js",
     "migrate:up": "npm run typeorm migration:run",
-    "migrate:down": "npm run typeorm migration:revert"
+    "migrate:down": "npm run typeorm migration:revert",
+    "seed": "node --loader ts-node/esm ./src/scripts/seed-superadmin.ts"
   },
   "dependencies": {
     "@casl/ability": "^7.0.1",
+    "@nestjs/authentication": "^0.0.1",
     "@nestjs/common": "^12.1.1",
     "@nestjs/config": "^12.0.1",
     "@nestjs/core": "^12.1.1",

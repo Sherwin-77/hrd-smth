@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { PasswordHasher } from '@nestjs/authentication';
 import { CreateEmployeeDto } from './dto/create-employee.dto.js';
 import { FindEmployeesQueryDto } from './dto/find-employees-query.dto.js';
 import { UpdateEmployeeDto } from './dto/update-employee.dto.js';
@@ -24,7 +25,10 @@ export interface PaginatedEmployees {
 
 @Injectable()
 export class EmployeesService {
-  constructor(private readonly employees: EmployeesRepository) {}
+  constructor(
+    private readonly employees: EmployeesRepository,
+    private readonly passwords: PasswordHasher,
+  ) {}
 
   async create(createEmployeeDto: CreateEmployeeDto): Promise<Employee> {
     await this.assertEmailAvailable(createEmployeeDto.email);
@@ -40,10 +44,13 @@ export class EmployeesService {
       leaveAt: createEmployeeDto.leaveAt
         ? new Date(createEmployeeDto.leaveAt)
         : null,
+      passwordHash: await this.passwords.hash(createEmployeeDto.password),
     });
 
     try {
-      return await this.employees.save(employee);
+      const saved = await this.employees.save(employee);
+      stripPasswordHash(saved);
+      return saved;
     } catch (error) {
       this.throwIfUniqueViolation(error, createEmployeeDto.email);
       throw error;
@@ -112,7 +119,7 @@ export class EmployeesService {
       await this.assertEmailAvailable(updateEmployeeDto.email);
     }
 
-    const { birthDate, joinAt, leaveAt, ...rest } = updateEmployeeDto;
+    const { birthDate, joinAt, leaveAt, password, ...rest } = updateEmployeeDto;
     const merged = this.employees.merge(employee, {
       ...rest,
       ...(birthDate !== undefined ? { birthDate: new Date(birthDate) } : {}),
@@ -120,10 +127,15 @@ export class EmployeesService {
       ...(leaveAt !== undefined
         ? { leaveAt: leaveAt ? new Date(leaveAt) : null }
         : {}),
+      ...(password !== undefined
+        ? { passwordHash: await this.passwords.hash(password) }
+        : {}),
     });
 
     try {
-      return await this.employees.save(merged);
+      const saved = await this.employees.save(merged);
+      stripPasswordHash(saved);
+      return saved;
     } catch (error) {
       this.throwIfUniqueViolation(error, updateEmployeeDto.email);
       throw error;
@@ -165,3 +177,7 @@ export class EmployeesService {
 }
 
 const normalize = (value: string) => value.trim().normalize('NFC').toLowerCase();
+
+function stripPasswordHash(employee: Employee): void {
+  delete (employee as { passwordHash?: unknown }).passwordHash;
+}
