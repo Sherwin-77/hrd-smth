@@ -18,7 +18,6 @@ import { CreatePayslipDto } from './dto/create-payslip.dto.js';
 import { FindPayslipsQueryDto } from './dto/find-payslips-query.dto.js';
 import { UpdatePayslipDto } from './dto/update-payslip.dto.js';
 import { PayslipResourceDto } from './dto/payslip-resource.dto.js';
-import { Payslip } from './entities/payslip.entity.js';
 
 @Controller('payslips')
 @UseGuards(AuthenticationGuard)
