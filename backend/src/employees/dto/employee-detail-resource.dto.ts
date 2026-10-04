@@ -1,5 +1,5 @@
 import type { Employee } from '../entities/employee.entity.js';
-import { ActivePayrollResourceDto } from '#/payrolls/dto/active-payroll-resource.dto.js';
+import { PayrollResourceDto } from '#payrolls/dto/payroll-resource.dto.js';
 import { EmployeeIndexResourceDto } from './employee-index-resource.dto.js';
 
 export class EmployeeDetailResourceDto extends EmployeeIndexResourceDto {
@@ -7,7 +7,7 @@ export class EmployeeDetailResourceDto extends EmployeeIndexResourceDto {
    * The employee's payroll with status `active`, or `null` when the
    * employee has no active payroll
    */
-  activePayroll: ActivePayrollResourceDto | null;
+  activePayroll: PayrollResourceDto | null;
 
   static override fromEntity(employee: Employee): EmployeeDetailResourceDto {
     const resource = new EmployeeDetailResourceDto();
@@ -23,7 +23,7 @@ export class EmployeeDetailResourceDto extends EmployeeIndexResourceDto {
     resource.createdAt = employee.createdAt;
     resource.updatedAt = employee.updatedAt;
     resource.activePayroll = employee.activePayroll
-      ? ActivePayrollResourceDto.fromEntity(employee.activePayroll)
+      ? PayrollResourceDto.fromEntity(employee.activePayroll)
       : null;
 
     return resource;

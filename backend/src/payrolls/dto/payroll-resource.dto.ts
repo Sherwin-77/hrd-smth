@@ -3,7 +3,7 @@ import {
   PayrollStatus,
 } from '#payrolls/entities/payroll.entity.js';
 
-export class ActivePayrollResourceDto {
+export class PayrollResourceDto {
   id: string;
   employeeId: string;
   accountNumber: string;
@@ -13,8 +13,8 @@ export class ActivePayrollResourceDto {
   createdAt: Date;
   updatedAt: Date;
 
-  static fromEntity(payroll: Payroll): ActivePayrollResourceDto {
-    const resource = new ActivePayrollResourceDto();
+  static fromEntity(payroll: Payroll): PayrollResourceDto {
+    const resource = new PayrollResourceDto();
     resource.id = payroll.id;
     resource.employeeId = payroll.employeeId;
     resource.accountNumber = payroll.accountNumber;
