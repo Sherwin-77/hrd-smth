@@ -1,5 +1,5 @@
 import type { Employee } from '../entities/employee.entity.js';
-import { ActivePayrollResourceDto } from './active-payroll-resource.dto.js';
+import { ActivePayrollResourceDto } from '#/payrolls/dto/active-payroll-resource.dto.js';
 import { EmployeeIndexResourceDto } from './employee-index-resource.dto.js';
 
 export class EmployeeDetailResourceDto extends EmployeeIndexResourceDto {
