@@ -53,6 +53,11 @@ export class PayrollsController {
     return this.payrollsService.remove(id);
   }
 
+  @Patch(':id/restore')
+  restore(@Param('id', ParseUUIDPipe) id: string): Promise<Payroll> {
+    return this.payrollsService.restore(id);
+  }
+
   @Patch(':id/activate')
   activate(@Param('id', ParseUUIDPipe) id: string): Promise<Payroll> {
     return this.payrollsService.activate(id);

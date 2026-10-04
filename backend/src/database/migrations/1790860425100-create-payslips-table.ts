@@ -16,6 +16,7 @@ export class CreatePayslipsTable1790860425100 implements MigrationInterface {
                 "status" VARCHAR(255) NOT NULL,
                 "created_at" TIMESTAMPTZ(6),
                 "updated_at" TIMESTAMPTZ(6),
+                "deleted_at" TIMESTAMPTZ(6),
 
                 CONSTRAINT "payslips_pkey" PRIMARY KEY ("id"),
                 CONSTRAINT "payslips_payroll_id_fkey" FOREIGN KEY ("payroll_id") REFERENCES payrolls("id") ON DELETE CASCADE

@@ -1,6 +1,7 @@
 import {
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   Entity,
   OneToMany,
   PrimaryColumn,
@@ -57,7 +58,12 @@ export class Employee {
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
-  @OneToMany(() => Payroll, (payroll) => payroll.employee)
+  @DeleteDateColumn({ name: 'deleted_at' })
+  deletedAt: Date | null;
+
+  @OneToMany(() => Payroll, (payroll) => payroll.employee, {
+    cascade: ['soft-remove', 'recover'],
+  })
   payrolls: Relation<Payroll>[];
 
   activePayroll: Payroll | null;

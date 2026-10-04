@@ -15,6 +15,7 @@ describe('PayrollsController', () => {
     remove: ReturnType<typeof vi.fn>;
     activate: ReturnType<typeof vi.fn>;
     deactivate: ReturnType<typeof vi.fn>;
+    restore: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(async () => {
@@ -26,6 +27,7 @@ describe('PayrollsController', () => {
       remove: vi.fn(),
       activate: vi.fn(),
       deactivate: vi.fn(),
+      restore: vi.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -80,11 +82,13 @@ describe('PayrollsController', () => {
     expect(service.remove).toHaveBeenCalledWith(id);
   });
 
-  it('activate/deactivate forward the id', async () => {
+  it('activate/deactivate/restore forward the id', async () => {
     const id = '0193e5e0-9f6a-7a1b-9c2d-4e5f6a7b8c9e';
     await controller.activate(id);
     await controller.deactivate(id);
+    await controller.restore(id);
     expect(service.activate).toHaveBeenCalledWith(id);
     expect(service.deactivate).toHaveBeenCalledWith(id);
+    expect(service.restore).toHaveBeenCalledWith(id);
   });
 });

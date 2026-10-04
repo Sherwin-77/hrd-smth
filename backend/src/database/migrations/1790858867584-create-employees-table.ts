@@ -16,6 +16,7 @@ export class CreateEmployeesTable1790858867584 implements MigrationInterface {
                 "leave_at" TIMESTAMPTZ,
                 "created_at" TIMESTAMPTZ(6),
                 "updated_at" TIMESTAMPTZ(6),
+                "deleted_at" TIMESTAMPTZ(6),
 
                 CONSTRAINT "employees_pkey" PRIMARY KEY ("id"),
                 CONSTRAINT "employees_email_unique" UNIQUE ("email")

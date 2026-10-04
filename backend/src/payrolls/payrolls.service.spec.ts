@@ -11,9 +11,11 @@ describe('PayrollsService', () => {
   let payrolls: {
     create: ReturnType<typeof vi.fn>;
     save: ReturnType<typeof vi.fn>;
+    findOne: ReturnType<typeof vi.fn>;
     findOneBy: ReturnType<typeof vi.fn>;
     merge: ReturnType<typeof vi.fn>;
-    remove: ReturnType<typeof vi.fn>;
+    softRemove: ReturnType<typeof vi.fn>;
+    recover: ReturnType<typeof vi.fn>;
     createQueryBuilder: ReturnType<typeof vi.fn>;
   };
   let employees: {
@@ -42,9 +44,11 @@ describe('PayrollsService', () => {
     payrolls = {
       create: vi.fn(),
       save: vi.fn(),
+      findOne: vi.fn(),
       findOneBy: vi.fn(),
       merge: vi.fn(),
-      remove: vi.fn(),
+      softRemove: vi.fn(),
+      recover: vi.fn(),
       createQueryBuilder: vi.fn(),
     };
     employees = {
@@ -167,10 +171,51 @@ describe('PayrollsService', () => {
     expect(payrolls.save).not.toHaveBeenCalled();
   });
 
-  it('remove deletes the payroll', async () => {
-    payrolls.findOneBy.mockResolvedValue(payroll);
-    payrolls.remove.mockResolvedValue(payroll);
+  it('remove soft-deletes the payroll with its payslips', async () => {
+    payrolls.findOne.mockResolvedValue(payroll);
+    payrolls.softRemove.mockResolvedValue(payroll);
     await expect(service.remove(payroll.id)).resolves.toBeUndefined();
-    expect(payrolls.remove).toHaveBeenCalledWith(payroll);
+    expect(payrolls.findOne).toHaveBeenCalledWith({
+      where: { id: payroll.id },
+      relations: { payslips: true },
+    });
+    expect(payrolls.softRemove).toHaveBeenCalledWith(payroll);
+  });
+
+  it('remove throws NotFoundException for unknown ids', async () => {
+    payrolls.findOne.mockResolvedValue(null);
+    await expect(service.remove('missing')).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+    expect(payrolls.softRemove).not.toHaveBeenCalled();
+  });
+
+  it('restore recovers a soft-deleted payroll', async () => {
+    const deleted = { ...payroll, deletedAt: new Date() };
+    payrolls.findOne.mockResolvedValue(deleted);
+    payrolls.recover.mockResolvedValue(payroll);
+    await expect(service.restore(payroll.id)).resolves.toBe(payroll);
+    expect(payrolls.findOne).toHaveBeenCalledWith({
+      where: { id: payroll.id },
+      relations: { payslips: true },
+      withDeleted: true,
+    });
+    expect(payrolls.recover).toHaveBeenCalledWith(deleted);
+  });
+
+  it('restore returns the payroll untouched when not deleted', async () => {
+    payrolls.findOne.mockResolvedValue({ ...payroll, deletedAt: null });
+    await expect(service.restore(payroll.id)).resolves.toMatchObject({
+      id: payroll.id,
+    });
+    expect(payrolls.recover).not.toHaveBeenCalled();
+  });
+
+  it('restore throws NotFoundException for unknown ids', async () => {
+    payrolls.findOne.mockResolvedValue(null);
+    await expect(service.restore('missing')).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+    expect(payrolls.recover).not.toHaveBeenCalled();
   });
 });

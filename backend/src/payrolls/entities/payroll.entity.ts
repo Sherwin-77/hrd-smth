@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryColumn, type Relation, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryColumn, type Relation, UpdateDateColumn } from "typeorm";
 import { Employee } from "#employees/entities/employee.entity.js";
 import { Payslip } from "#payslips/entities/payslip.entity.js";
 
@@ -38,17 +38,22 @@ export class Payroll {
     })
     status: PayrollStatus = PayrollStatus.ACTIVE;
 
-    @CreateDateColumn()
+    @CreateDateColumn({name: 'created_at'})
     createdAt: Date;
     
-    @UpdateDateColumn()
+    @UpdateDateColumn({name: 'updated_at'})
     updatedAt: Date;
+
+    @DeleteDateColumn({name: 'deleted_at'})
+    deletedAt: Date | null;
     
 
     @ManyToOne(() => Employee, (employee) => employee.payrolls)
     @JoinColumn({name: 'employee_id'})
     employee: Relation<Employee>;
 
-    @OneToMany(() => Payslip, (payslip) => payslip.payroll)
+    @OneToMany(() => Payslip, (payslip) => payslip.payroll, {
+        cascade: ['soft-remove', 'recover'],
+    })
     payslips: Relation<Payslip>[]
 }

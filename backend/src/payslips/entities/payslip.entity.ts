@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryColumn, type Relation, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, ManyToOne, PrimaryColumn, type Relation, UpdateDateColumn } from "typeorm";
 import { Payroll } from "#payrolls/entities/payroll.entity.js";
 
 export const PayslipStatus = {
@@ -73,6 +73,9 @@ export class Payslip {
     
     @UpdateDateColumn({name: 'updated_at'})
     updatedAt: Date;   
+
+    @DeleteDateColumn({name: 'deleted_at'})
+    deletedAt: Date | null;
      
 
     @ManyToOne(() => Payroll, (payroll) => payroll.payslips)

@@ -55,4 +55,9 @@ export class EmployeesController {
   remove(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
     return this.employeesService.remove(id);
   }
+
+  @Patch(':id/restore')
+  restore(@Param('id', ParseUUIDPipe) id: string): Promise<Employee> {
+    return this.employeesService.restore(id);
+  }
 }

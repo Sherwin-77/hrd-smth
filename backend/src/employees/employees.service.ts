@@ -143,8 +143,26 @@ export class EmployeesService {
   }
 
   async remove(id: string): Promise<void> {
-    const employee = await this.findOneEntityOrFail(id);
-    await this.employees.remove(employee);
+    const employee = await this.employees.findOneWithRelations(id);
+    if (!employee) {
+      throw new NotFoundException(`Employee #${id} not found`);
+    }
+    // Soft-deletes the employee and cascades to payrolls and payslips
+    // via `cascade: ['soft-remove', 'recover']` on the relations.
+    await this.employees.softRemove(employee);
+  }
+
+  async restore(id: string): Promise<Employee> {
+    const employee = await this.employees.findOneWithRelations(id, true);
+    if (!employee) {
+      throw new NotFoundException(`Employee #${id} not found`);
+    }
+    if (!employee.deletedAt) {
+      return employee;
+    }
+    const recovered = await this.employees.recover(employee);
+    stripPasswordHash(recovered);
+    return recovered;
   }
 
   private async findOneEntityOrFail(id: string): Promise<Employee> {
@@ -156,6 +174,9 @@ export class EmployeesService {
   }
 
   private async validateEmailAvailable(email: string): Promise<void> {
+    // `findOneBy` excludes soft-deleted rows, but the unique constraint
+    // still reserves emails of soft-deleted employees, so a reuse attempt
+    // surfaces as ConflictException via the 23505 handler below.
     const existing = await this.employees.findOneBy({ email });
     if (existing) {
       throw new ConflictException(`Email ${email} is already in use`);

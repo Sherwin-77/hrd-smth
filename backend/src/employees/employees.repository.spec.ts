@@ -6,7 +6,7 @@ import { PayrollStatus } from '#payrolls/entities/payroll.entity.js';
 describe('EmployeesRepository', () => {
   let repository: EmployeesRepository;
   let queryBuilder: {
-    leftJoinAndSelect: ReturnType<typeof vi.fn>;
+    leftJoinAndMapOne: ReturnType<typeof vi.fn>;
     where: ReturnType<typeof vi.fn>;
     getOne: ReturnType<typeof vi.fn>;
   };
@@ -18,7 +18,7 @@ describe('EmployeesRepository', () => {
     repository = new EmployeesRepository(dataSource as any);
 
     queryBuilder = {
-      leftJoinAndSelect: vi.fn().mockReturnThis(),
+      leftJoinAndMapOne: vi.fn().mockReturnThis(),
       where: vi.fn().mockReturnThis(),
       getOne: vi.fn(),
     };
@@ -36,7 +36,8 @@ describe('EmployeesRepository', () => {
     ).resolves.toBe(employee);
 
     expect(repository.createQueryBuilder).toHaveBeenCalledWith('employee');
-    expect(queryBuilder.leftJoinAndSelect).toHaveBeenCalledWith(
+    expect(queryBuilder.leftJoinAndMapOne).toHaveBeenCalledWith(
+      'employee.activePayroll',
       'employee.payrolls',
       'payroll',
       'payroll.status = :activeStatus',
@@ -53,5 +54,33 @@ describe('EmployeesRepository', () => {
     await expect(
       repository.findOneWithActivePayroll('missing'),
     ).resolves.toBeNull();
+  });
+
+  it('findOneWithRelations loads payrolls and payslips', async () => {
+    const employee = { id: 'employee-id' } as Employee;
+    const findOne = vi.spyOn(repository, 'findOne').mockResolvedValue(employee);
+
+    await expect(repository.findOneWithRelations('employee-id')).resolves.toBe(
+      employee,
+    );
+    expect(findOne).toHaveBeenCalledWith({
+      where: { id: 'employee-id' },
+      relations: { payrolls: { payslips: true } },
+      withDeleted: false,
+    });
+  });
+
+  it('findOneWithRelations includes soft-deleted rows when requested', async () => {
+    const employee = { id: 'employee-id' } as Employee;
+    const findOne = vi.spyOn(repository, 'findOne').mockResolvedValue(employee);
+
+    await expect(
+      repository.findOneWithRelations('employee-id', true),
+    ).resolves.toBe(employee);
+    expect(findOne).toHaveBeenCalledWith({
+      where: { id: 'employee-id' },
+      relations: { payrolls: { payslips: true } },
+      withDeleted: true,
+    });
   });
 });

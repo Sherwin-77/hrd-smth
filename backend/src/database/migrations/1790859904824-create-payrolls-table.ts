@@ -13,6 +13,7 @@ export class CreatePayrollsTable1790859904824 implements MigrationInterface {
                 "status" VARCHAR(255) NOT NULL,
                 "created_at" TIMESTAMPTZ(6),
                 "updated_at" TIMESTAMPTZ(6),
+                "deleted_at" TIMESTAMPTZ(6),
 
                 CONSTRAINT "payrolls_pkey" PRIMARY KEY ("id"),
                 CONSTRAINT "payrolls_employee_id_fkey" FOREIGN KEY ("employee_id") REFERENCES employees("id")

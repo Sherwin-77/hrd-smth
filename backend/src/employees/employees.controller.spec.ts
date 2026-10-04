@@ -13,6 +13,7 @@ describe('EmployeesController', () => {
     findOne: ReturnType<typeof vi.fn>;
     update: ReturnType<typeof vi.fn>;
     remove: ReturnType<typeof vi.fn>;
+    restore: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(async () => {
@@ -22,6 +23,7 @@ describe('EmployeesController', () => {
       findOne: vi.fn(),
       update: vi.fn(),
       remove: vi.fn(),
+      restore: vi.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -67,13 +69,15 @@ describe('EmployeesController', () => {
     expect(service.findAll).toHaveBeenCalledWith(query);
   });
 
-  it('findOne/update/remove forward the id', async () => {
+  it('findOne/update/remove/restore forward the id', async () => {
     const id = '0193e5e0-9f6a-7a1b-9c2d-4e5f6a7b8c9d';
     await controller.findOne(id);
     await controller.update(id, { name: 'New Name' });
     await controller.remove(id);
+    await controller.restore(id);
     expect(service.findOne).toHaveBeenCalledWith(id);
     expect(service.update).toHaveBeenCalledWith(id, { name: 'New Name' });
     expect(service.remove).toHaveBeenCalledWith(id);
+    expect(service.restore).toHaveBeenCalledWith(id);
   });
 });

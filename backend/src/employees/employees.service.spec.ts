@@ -15,8 +15,10 @@ describe('EmployeesService', () => {
     findAndCount: ReturnType<typeof vi.fn>;
     findOneBy: ReturnType<typeof vi.fn>;
     findOneWithActivePayroll: ReturnType<typeof vi.fn>;
+    findOneWithRelations: ReturnType<typeof vi.fn>;
     merge: ReturnType<typeof vi.fn>;
-    remove: ReturnType<typeof vi.fn>;
+    softRemove: ReturnType<typeof vi.fn>;
+    recover: ReturnType<typeof vi.fn>;
   };
 
   const employee = {
@@ -64,8 +66,10 @@ describe('EmployeesService', () => {
       findAndCount: vi.fn(),
       findOneBy: vi.fn(),
       findOneWithActivePayroll: vi.fn(),
+      findOneWithRelations: vi.fn(),
       merge: vi.fn(),
-      remove: vi.fn(),
+      softRemove: vi.fn(),
+      recover: vi.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -178,10 +182,50 @@ describe('EmployeesService', () => {
     });
   });
 
-  it('remove deletes the employee', async () => {
-    repository.findOneBy.mockResolvedValue(employee);
-    repository.remove.mockResolvedValue(employee);
+  it('remove soft-deletes the employee with its relations', async () => {
+    repository.findOneWithRelations.mockResolvedValue(employee);
+    repository.softRemove.mockResolvedValue(employee);
     await expect(service.remove(employee.id)).resolves.toBeUndefined();
-    expect(repository.remove).toHaveBeenCalledWith(employee);
+    expect(repository.findOneWithRelations).toHaveBeenCalledWith(employee.id);
+    expect(repository.softRemove).toHaveBeenCalledWith(employee);
+  });
+
+  it('remove throws NotFoundException for unknown ids', async () => {
+    repository.findOneWithRelations.mockResolvedValue(null);
+    await expect(service.remove('missing')).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+    expect(repository.softRemove).not.toHaveBeenCalled();
+  });
+
+  it('restore recovers a soft-deleted employee', async () => {
+    const deleted = { ...employee, deletedAt: new Date() };
+    repository.findOneWithRelations.mockResolvedValue(deleted);
+    repository.recover.mockResolvedValue(employee);
+    await expect(service.restore(employee.id)).resolves.toBe(employee);
+    expect(repository.findOneWithRelations).toHaveBeenCalledWith(
+      employee.id,
+      true,
+    );
+    expect(repository.recover).toHaveBeenCalledWith(deleted);
+  });
+
+  it('restore returns the employee untouched when not deleted', async () => {
+    repository.findOneWithRelations.mockResolvedValue({
+      ...employee,
+      deletedAt: null,
+    });
+    await expect(service.restore(employee.id)).resolves.toMatchObject({
+      id: employee.id,
+    });
+    expect(repository.recover).not.toHaveBeenCalled();
+  });
+
+  it('restore throws NotFoundException for unknown ids', async () => {
+    repository.findOneWithRelations.mockResolvedValue(null);
+    await expect(service.restore('missing')).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+    expect(repository.recover).not.toHaveBeenCalled();
   });
 });
