@@ -31,7 +31,7 @@ export class EmployeesService {
   ) {}
 
   async create(createEmployeeDto: CreateEmployeeDto): Promise<Employee> {
-    await this.assertEmailAvailable(createEmployeeDto.email);
+    await this.validateEmailAvailable(createEmployeeDto.email);
 
     const employee = this.employees.create({
       name: createEmployeeDto.name,
@@ -116,7 +116,7 @@ export class EmployeesService {
     }
 
     if (updateEmployeeDto.email && updateEmployeeDto.email !== employee.email) {
-      await this.assertEmailAvailable(updateEmployeeDto.email);
+      await this.validateEmailAvailable(updateEmployeeDto.email);
     }
 
     const { birthDate, joinAt, leaveAt, password, ...rest } = updateEmployeeDto;
@@ -155,7 +155,7 @@ export class EmployeesService {
     return employee;
   }
 
-  private async assertEmailAvailable(email: string): Promise<void> {
+  private async validateEmailAvailable(email: string): Promise<void> {
     const existing = await this.employees.findOneBy({ email });
     if (existing) {
       throw new ConflictException(`Email ${email} is already in use`);
