@@ -22,6 +22,10 @@ export class CreatePayslipsTable1790860425100 implements MigrationInterface {
                 CONSTRAINT "payslips_payroll_id_fkey" FOREIGN KEY ("payroll_id") REFERENCES payrolls("id") ON DELETE CASCADE
             );
         `);
+
+        await queryRunner.query(`
+            CREATE INDEX "payslips_payroll_id_index" ON payslips("payroll_id");
+        `);
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
