@@ -22,7 +22,9 @@ export class EmployeeDetailResourceDto extends EmployeeIndexResourceDto {
     resource.leaveAt = employee.leaveAt;
     resource.createdAt = employee.createdAt;
     resource.updatedAt = employee.updatedAt;
-    resource.activePayroll = employee.activePayroll ?? null;
+    resource.activePayroll = employee.activePayroll
+      ? ActivePayrollResourceDto.fromEntity(employee.activePayroll)
+      : null;
 
     return resource;
   }
