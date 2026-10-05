@@ -10,9 +10,10 @@ import { FindPayrollsQueryDto } from './dto/find-payrolls-query.dto.js';
 import { UpdatePayrollDto } from './dto/update-payroll.dto.js';
 import { Payroll, PayrollStatus } from './entities/payroll.entity.js';
 import { Employee } from '#employees/entities/employee.entity.js';
+import { PayrollResourceDto } from './dto/payroll-resource.dto.js';
 
 export interface PaginatedPayrolls {
-  data: Payroll[];
+  data: PayrollResourceDto[];
   meta: {
     total: number;
     page: number;
@@ -30,7 +31,7 @@ export class PayrollsService {
     private readonly employees: Repository<Employee>,
   ) {}
 
-  async create(createPayrollDto: CreatePayrollDto): Promise<Payroll> {
+  async create(createPayrollDto: CreatePayrollDto): Promise<PayrollResourceDto> {
     const employee = await this.employees.findOneBy({
       id: createPayrollDto.employeeId,
     });
@@ -116,7 +117,7 @@ export class PayrollsService {
   async update(
     id: string,
     updatePayrollDto: UpdatePayrollDto,
-  ): Promise<Payroll> {
+  ): Promise<PayrollResourceDto> {
     const payroll = await this.findOneOrFail(id);
     const merged = this.payrolls.merge(payroll, {
       ...(updatePayrollDto.accountNumber !== undefined
@@ -139,7 +140,7 @@ export class PayrollsService {
     await this.payrolls.softRemove(payroll);
   }
 
-  async restore(id: string): Promise<Payroll> {
+  async restore(id: string): Promise<PayrollResourceDto> {
     const payroll = await this.payrolls.findOne({
       where: { id },
       relations: { payslips: true },
@@ -154,7 +155,7 @@ export class PayrollsService {
     return this.payrolls.recover(payroll);
   }
 
-  async activate(id: string): Promise<Payroll> {
+  async activate(id: string): Promise<PayrollResourceDto> {
     const payroll = await this.findOneOrFail(id);
     if (payroll.status === PayrollStatus.ACTIVE) {
       return payroll;
@@ -169,7 +170,7 @@ export class PayrollsService {
     }
   }
 
-  async deactivate(id: string): Promise<Payroll> {
+  async deactivate(id: string): Promise<PayrollResourceDto> {
     const payroll = await this.findOneOrFail(id);
     if (payroll.status === PayrollStatus.INACTIVE) {
       return payroll;

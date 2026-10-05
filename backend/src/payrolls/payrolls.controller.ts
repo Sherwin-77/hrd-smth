@@ -17,7 +17,7 @@ import { PayrollsService, PaginatedPayrolls } from './payrolls.service.js';
 import { CreatePayrollDto } from './dto/create-payroll.dto.js';
 import { FindPayrollsQueryDto } from './dto/find-payrolls-query.dto.js';
 import { UpdatePayrollDto } from './dto/update-payroll.dto.js';
-import { Payroll } from './entities/payroll.entity.js';
+import { PayrollResourceDto } from './dto/payroll-resource.dto.js';
 
 @Controller('payrolls')
 @UseGuards(AuthenticationGuard)
@@ -25,7 +25,7 @@ export class PayrollsController {
   constructor(private readonly payrollsService: PayrollsService) {}
 
   @Post()
-  create(@Body() createPayrollDto: CreatePayrollDto): Promise<Payroll> {
+  create(@Body() createPayrollDto: CreatePayrollDto): Promise<PayrollResourceDto> {
     return this.payrollsService.create(createPayrollDto);
   }
 
@@ -35,7 +35,7 @@ export class PayrollsController {
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string): Promise<Payroll> {
+  findOne(@Param('id', ParseUUIDPipe) id: string): Promise<PayrollResourceDto> {
     return this.payrollsService.findOne(id);
   }
 
@@ -43,7 +43,7 @@ export class PayrollsController {
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updatePayrollDto: UpdatePayrollDto,
-  ): Promise<Payroll> {
+  ): Promise<PayrollResourceDto> {
     return this.payrollsService.update(id, updatePayrollDto);
   }
 
@@ -54,17 +54,17 @@ export class PayrollsController {
   }
 
   @Patch(':id/restore')
-  restore(@Param('id', ParseUUIDPipe) id: string): Promise<Payroll> {
+  restore(@Param('id', ParseUUIDPipe) id: string): Promise<PayrollResourceDto> {
     return this.payrollsService.restore(id);
   }
 
   @Patch(':id/activate')
-  activate(@Param('id', ParseUUIDPipe) id: string): Promise<Payroll> {
+  activate(@Param('id', ParseUUIDPipe) id: string): Promise<PayrollResourceDto> {
     return this.payrollsService.activate(id);
   }
 
   @Patch(':id/deactivate')
-  deactivate(@Param('id', ParseUUIDPipe) id: string): Promise<Payroll> {
+  deactivate(@Param('id', ParseUUIDPipe) id: string): Promise<PayrollResourceDto> {
     return this.payrollsService.deactivate(id);
   }
 }
