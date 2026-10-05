@@ -24,7 +24,7 @@ describe('AuthService', () => {
     revokeAll: ReturnType<typeof vi.fn>;
   };
 
-  const employee = {
+  const employeeData = {
     id: '0193e5e0-9f6a-7a1b-9c2d-4e5f6a7b8c9d',
     name: 'Jane Doe',
     email: 'jane@example.com',
@@ -35,7 +35,8 @@ describe('AuthService', () => {
     joinAt: new Date('2024-01-01'),
     leaveAt: null,
     passwordHash: 'placeholder',
-  } as Employee;
+  };
+  const employee = employeeData as Employee;
 
   function mockEmployeeQueryBuilder(result: Employee | null) {
     const qb = {
@@ -95,7 +96,7 @@ describe('AuthService', () => {
 
   it('login returns a session for valid credentials', async () => {
     const passwordHash = await passwords.hash('supersecret1');
-    mockEmployeeQueryBuilder({ ...employee, passwordHash });
+    mockEmployeeQueryBuilder({ ...employeeData, passwordHash } as Employee);
     employees.save.mockImplementation(async (value: unknown) => value);
     mockSessionCreate();
 
@@ -117,9 +118,9 @@ describe('AuthService', () => {
 
   it('login rejects employees with no password set', async () => {
     mockEmployeeQueryBuilder({
-      ...employee,
+      ...employeeData,
       passwordHash: null as unknown as string,
-    });
+    } as Employee);
     await expect(
       service.login(employee.email, 'whatever'),
     ).rejects.toBeInstanceOf(UnauthorizedException);
@@ -127,7 +128,7 @@ describe('AuthService', () => {
 
   it('login rejects a wrong password', async () => {
     const passwordHash = await passwords.hash('correct-password');
-    mockEmployeeQueryBuilder({ ...employee, passwordHash });
+    mockEmployeeQueryBuilder({ ...employeeData, passwordHash } as Employee);
     await expect(
       service.login(employee.email, 'wrong-password'),
     ).rejects.toBeInstanceOf(UnauthorizedException);
@@ -195,7 +196,7 @@ describe('AuthService', () => {
 
   it('changePassword verifies the current password and revokes other sessions', async () => {
     const passwordHash = await passwords.hash('old-password');
-    mockEmployeeQueryBuilder({ ...employee, passwordHash });
+    mockEmployeeQueryBuilder({ ...employeeData, passwordHash } as Employee);
     employees.save.mockImplementation(async (value: unknown) => value);
     sessions.revokeAll.mockResolvedValue(undefined);
 
@@ -218,7 +219,7 @@ describe('AuthService', () => {
 
   it('changePassword rejects a wrong current password', async () => {
     const passwordHash = await passwords.hash('old-password');
-    mockEmployeeQueryBuilder({ ...employee, passwordHash });
+    mockEmployeeQueryBuilder({ ...employeeData, passwordHash } as Employee);
     await expect(
       service.changePassword(employee.id, 'wrong', 'brand-new-password'),
     ).rejects.toBeInstanceOf(UnauthorizedException);

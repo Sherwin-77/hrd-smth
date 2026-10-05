@@ -5,6 +5,7 @@ import { PayrollStatus } from '#payrolls/entities/payroll.entity.js';
 
 describe('EmployeesRepository', () => {
   let repository: EmployeesRepository;
+  let createQueryBuilderMock: ReturnType<typeof vi.spyOn>;
   let queryBuilder: {
     leftJoinAndMapOne: ReturnType<typeof vi.fn>;
     where: ReturnType<typeof vi.fn>;
@@ -22,9 +23,9 @@ describe('EmployeesRepository', () => {
       where: vi.fn().mockReturnThis(),
       getOne: vi.fn(),
     };
-    vi.spyOn(repository, 'createQueryBuilder').mockReturnValue(
-      queryBuilder as any,
-    );
+    createQueryBuilderMock = vi
+      .spyOn(repository, 'createQueryBuilder')
+      .mockReturnValue(queryBuilder as any);
   });
 
   it('findOneWithActivePayroll joins only the active payroll scoped by id', async () => {
@@ -35,7 +36,7 @@ describe('EmployeesRepository', () => {
       repository.findOneWithActivePayroll('employee-id'),
     ).resolves.toBe(employee);
 
-    expect(repository.createQueryBuilder).toHaveBeenCalledWith('employee');
+    expect(createQueryBuilderMock).toHaveBeenCalledWith('employee');
     expect(queryBuilder.leftJoinAndMapOne).toHaveBeenCalledWith(
       'employee.activePayroll',
       'employee.payrolls',

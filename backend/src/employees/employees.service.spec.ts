@@ -12,7 +12,7 @@ describe('EmployeesService', () => {
   let repository: {
     create: ReturnType<typeof vi.fn>;
     save: ReturnType<typeof vi.fn>;
-    findAndCount: ReturnType<typeof vi.fn>;
+    createQueryBuilder: ReturnType<typeof vi.fn>;
     findOneBy: ReturnType<typeof vi.fn>;
     findOneWithActivePayroll: ReturnType<typeof vi.fn>;
     findOneWithRelations: ReturnType<typeof vi.fn>;
@@ -21,7 +21,7 @@ describe('EmployeesService', () => {
     recover: ReturnType<typeof vi.fn>;
   };
 
-  const employee = {
+  const employeeData = {
     id: '0193e5e0-9f6a-7a1b-9c2d-4e5f6a7b8c9d',
     name: 'Jane Doe',
     email: 'jane@example.com',
@@ -31,7 +31,8 @@ describe('EmployeesService', () => {
     birthDate: new Date('1990-01-01'),
     joinAt: new Date('2024-01-01'),
     leaveAt: null,
-  } as Employee;
+  };
+  const employee = employeeData as Employee;
 
   const activePayroll = {
     id: '0193e5e0-9f6a-7a1b-9c2d-4e5f6a7b8c9e',
@@ -59,11 +60,23 @@ describe('EmployeesService', () => {
     repository.findOneWithActivePayroll.mockResolvedValue(result);
   }
 
+  function mockQueryBuilderResult(rows: Employee[], total: number) {
+    const qb = {
+      where: vi.fn().mockReturnThis(),
+      orderBy: vi.fn().mockReturnThis(),
+      skip: vi.fn().mockReturnThis(),
+      take: vi.fn().mockReturnThis(),
+      getManyAndCount: vi.fn().mockResolvedValue([rows, total]),
+    };
+    repository.createQueryBuilder.mockReturnValue(qb);
+    return qb;
+  }
+
   beforeEach(async () => {
     repository = {
       create: vi.fn(),
       save: vi.fn(),
-      findAndCount: vi.fn(),
+      createQueryBuilder: vi.fn(),
       findOneBy: vi.fn(),
       findOneWithActivePayroll: vi.fn(),
       findOneWithRelations: vi.fn(),
@@ -114,7 +127,7 @@ describe('EmployeesService', () => {
   });
 
   it('findAll returns a paginated envelope of index resources', async () => {
-    repository.findAndCount.mockResolvedValue([[employee], 1]);
+    const qb = mockQueryBuilderResult([employee], 1);
     await expect(service.findAll({ page: 1, limit: 10 })).resolves.toEqual({
       data: [
         expect.objectContaining({
@@ -125,11 +138,12 @@ describe('EmployeesService', () => {
       ],
       meta: { total: 1, page: 1, limit: 10, totalPages: 1 },
     });
-    expect(repository.findAndCount).toHaveBeenCalled();
+    expect(repository.createQueryBuilder).toHaveBeenCalledWith('employee');
+    expect(qb.getManyAndCount).toHaveBeenCalled();
   });
 
   it('findAll maps one resource per employee', async () => {
-    repository.findAndCount.mockResolvedValue([[employee, employee], 2]);
+    mockQueryBuilderResult([employee, employee], 2);
     const result = await service.findAll({ page: 1, limit: 10 });
     expect(result.data).toHaveLength(2);
     expect(result.data[0]).not.toHaveProperty('payrolls');
@@ -137,7 +151,7 @@ describe('EmployeesService', () => {
   });
 
   it('findOne delegates to the repository custom query', async () => {
-    mockFindOneResult({ ...employee, payrolls: [] });
+    mockFindOneResult({ ...employeeData, activePayroll: null } as Employee);
     await expect(service.findOne(employee.id)).resolves.toMatchObject({
       id: employee.id,
       email: employee.email,
@@ -149,7 +163,7 @@ describe('EmployeesService', () => {
   });
 
   it('findOne embeds the active payroll when one exists', async () => {
-    mockFindOneResult({ ...employee, payrolls: [activePayroll] });
+    mockFindOneResult({ ...employeeData, activePayroll } as Employee);
     await expect(service.findOne(employee.id)).resolves.toMatchObject({
       id: employee.id,
       activePayroll: {
@@ -199,7 +213,7 @@ describe('EmployeesService', () => {
   });
 
   it('restore recovers a soft-deleted employee', async () => {
-    const deleted = { ...employee, deletedAt: new Date() };
+    const deleted = { ...employeeData, deletedAt: new Date() };
     repository.findOneWithRelations.mockResolvedValue(deleted);
     repository.recover.mockResolvedValue(employee);
     await expect(service.restore(employee.id)).resolves.toBe(employee);
@@ -212,7 +226,7 @@ describe('EmployeesService', () => {
 
   it('restore returns the employee untouched when not deleted', async () => {
     repository.findOneWithRelations.mockResolvedValue({
-      ...employee,
+      ...employeeData,
       deletedAt: null,
     });
     await expect(service.restore(employee.id)).resolves.toMatchObject({

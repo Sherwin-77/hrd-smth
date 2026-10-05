@@ -23,21 +23,21 @@ describe('PayrollsService', () => {
   };
 
   const employeeId = '0193e5e0-9f6a-7a1b-9c2d-4e5f6a7b8c9d';
-  const payroll = {
+  const payrollData = {
     id: '0193e5e0-9f6a-7a1b-9c2d-4e5f6a7b8c9e',
     employeeId,
     accountNumber: '1234567890',
     accountName: 'Jane Doe',
     taxPercentage: 0.05,
     status: PayrollStatus.ACTIVE,
-  } as Payroll;
+  };
+  const payroll = payrollData as Payroll;
 
   const createDto = {
     employeeId,
     accountNumber: '1234567890',
     accountName: 'Jane Doe',
     taxPercentage: 0.05,
-    status: PayrollStatus.ACTIVE,
   };
 
   beforeEach(async () => {
@@ -87,16 +87,17 @@ describe('PayrollsService', () => {
     expect(payrolls.save).not.toHaveBeenCalled();
   });
 
-  it('create saves an inactive payroll without checking for conflicts', async () => {
+  it('create always creates an active payroll and checks for conflicts', async () => {
     employees.findOneBy.mockResolvedValue({ id: employeeId });
-    const inactive = { ...payroll, status: PayrollStatus.INACTIVE };
-    payrolls.create.mockReturnValue(inactive);
-    payrolls.save.mockResolvedValue(inactive);
+    payrolls.findOneBy.mockResolvedValue(null);
+    payrolls.create.mockReturnValue(payroll);
+    payrolls.save.mockResolvedValue(payroll);
 
-    await expect(
-      service.create({ ...createDto, status: PayrollStatus.INACTIVE }),
-    ).resolves.toBe(inactive);
-    expect(payrolls.findOneBy).not.toHaveBeenCalled();
+    await expect(service.create(createDto)).resolves.toBe(payroll);
+    expect(payrolls.findOneBy).toHaveBeenCalled();
+    expect(payrolls.create).toHaveBeenCalledWith(
+      expect.objectContaining({ status: PayrollStatus.ACTIVE }),
+    );
   });
 
   it('create maps a unique-violation race to ConflictException', async () => {
@@ -118,7 +119,7 @@ describe('PayrollsService', () => {
 
   it('update saves merged changes without touching status', async () => {
     payrolls.findOneBy.mockResolvedValue(payroll);
-    const updated = { ...payroll, accountName: 'New Name' };
+    const updated = { ...payrollData, accountName: 'New Name' };
     payrolls.merge.mockReturnValue(updated);
     payrolls.save.mockResolvedValue(updated);
 
@@ -129,7 +130,7 @@ describe('PayrollsService', () => {
   });
 
   it('activate returns the payroll untouched when already active', async () => {
-    payrolls.findOneBy.mockResolvedValue({ ...payroll });
+    payrolls.findOneBy.mockResolvedValue({ ...payrollData });
     await expect(service.activate(payroll.id)).resolves.toMatchObject({
       status: PayrollStatus.ACTIVE,
     });
@@ -137,7 +138,7 @@ describe('PayrollsService', () => {
   });
 
   it('activate rejects when another active payroll exists', async () => {
-    const inactive = { ...payroll, status: PayrollStatus.INACTIVE };
+    const inactive = { ...payrollData, status: PayrollStatus.INACTIVE };
     payrolls.findOneBy.mockImplementation((where: Record<string, unknown>) => {
       if ('employeeId' in where) return payroll;
       return inactive;
@@ -149,7 +150,7 @@ describe('PayrollsService', () => {
   });
 
   it('activate flips an inactive payroll with no rival active', async () => {
-    const inactive = { ...payroll, status: PayrollStatus.INACTIVE };
+    const inactive = { ...payrollData, status: PayrollStatus.INACTIVE };
     payrolls.findOneBy.mockImplementation((where: Record<string, unknown>) => {
       if ('employeeId' in where) return null;
       return inactive;
@@ -163,7 +164,7 @@ describe('PayrollsService', () => {
   });
 
   it('deactivate returns the payroll untouched when already inactive', async () => {
-    const inactive = { ...payroll, status: PayrollStatus.INACTIVE };
+    const inactive = { ...payrollData, status: PayrollStatus.INACTIVE };
     payrolls.findOneBy.mockResolvedValue({ ...inactive });
     await expect(service.deactivate(payroll.id)).resolves.toMatchObject({
       status: PayrollStatus.INACTIVE,
@@ -191,7 +192,7 @@ describe('PayrollsService', () => {
   });
 
   it('restore recovers a soft-deleted payroll', async () => {
-    const deleted = { ...payroll, deletedAt: new Date() };
+    const deleted = { ...payrollData, deletedAt: new Date() };
     payrolls.findOne.mockResolvedValue(deleted);
     payrolls.recover.mockResolvedValue(payroll);
     await expect(service.restore(payroll.id)).resolves.toBe(payroll);
@@ -204,7 +205,7 @@ describe('PayrollsService', () => {
   });
 
   it('restore returns the payroll untouched when not deleted', async () => {
-    payrolls.findOne.mockResolvedValue({ ...payroll, deletedAt: null });
+    payrolls.findOne.mockResolvedValue({ ...payrollData, deletedAt: null });
     await expect(service.restore(payroll.id)).resolves.toMatchObject({
       id: payroll.id,
     });

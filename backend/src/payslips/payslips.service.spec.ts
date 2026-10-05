@@ -23,7 +23,7 @@ describe('PayslipsService', () => {
   };
 
   const payrollId = '0193e5e0-9f6a-7a1b-9c2d-4e5f6a7b8c9d';
-  const payslip = {
+  const payslipData = {
     id: '0193e5e0-9f6a-7a1b-9c2d-4e5f6a7b8c9e',
     payrollId,
     basicSalary: 5000,
@@ -33,7 +33,8 @@ describe('PayslipsService', () => {
     deduction: 0,
     date: new Date('2026-01-31'),
     status: PayslipStatus.PENDING,
-  } as Payslip;
+  };
+  const payslip = payslipData as Payslip;
 
   const createDto = {
     payrollId,
@@ -85,7 +86,7 @@ describe('PayslipsService', () => {
 
   it('create always starts as pending', async () => {
     payrolls.findOneBy.mockResolvedValue({ id: payrollId });
-    const pending = { ...payslip, status: PayslipStatus.PENDING };
+    const pending = { ...payslipData, status: PayslipStatus.PENDING };
     payslips.create.mockReturnValue(pending);
     payslips.save.mockResolvedValue(pending);
 
@@ -108,8 +109,8 @@ describe('PayslipsService', () => {
   });
 
   it('update saves merged changes on a pending payslip', async () => {
-    payslips.findOneBy.mockResolvedValue({ ...payslip });
-    const updated = { ...payslip, bonus: 500 };
+    payslips.findOneBy.mockResolvedValue({ ...payslipData });
+    const updated = { ...payslipData, bonus: 500 };
     payslips.merge.mockReturnValue(updated);
     payslips.save.mockResolvedValue(updated);
 
@@ -121,7 +122,7 @@ describe('PayslipsService', () => {
 
   it('update rejects non-pending payslips', async () => {
     payslips.findOneBy.mockResolvedValue({
-      ...payslip,
+      ...payslipData,
       status: PayslipStatus.APPROVED,
     });
     await expect(
@@ -131,7 +132,7 @@ describe('PayslipsService', () => {
   });
 
   it('approve flips a pending payslip to approved', async () => {
-    payslips.findOneBy.mockResolvedValue({ ...payslip });
+    payslips.findOneBy.mockResolvedValue({ ...payslipData });
     payslips.save.mockImplementation((entity: Payslip) =>
       Promise.resolve(entity),
     );
@@ -142,7 +143,7 @@ describe('PayslipsService', () => {
 
   it('approve returns the payslip untouched when already approved', async () => {
     payslips.findOneBy.mockResolvedValue({
-      ...payslip,
+      ...payslipData,
       status: PayslipStatus.APPROVED,
     });
     await expect(service.approve(payslip.id)).resolves.toMatchObject({
@@ -153,7 +154,7 @@ describe('PayslipsService', () => {
 
   it('approve rejects an already-rejected payslip', async () => {
     payslips.findOneBy.mockResolvedValue({
-      ...payslip,
+      ...payslipData,
       status: PayslipStatus.REJECTED,
     });
     await expect(service.approve(payslip.id)).rejects.toBeInstanceOf(
@@ -163,7 +164,7 @@ describe('PayslipsService', () => {
   });
 
   it('reject flips a pending payslip to rejected', async () => {
-    payslips.findOneBy.mockResolvedValue({ ...payslip });
+    payslips.findOneBy.mockResolvedValue({ ...payslipData });
     payslips.save.mockImplementation((entity: Payslip) =>
       Promise.resolve(entity),
     );
@@ -174,7 +175,7 @@ describe('PayslipsService', () => {
 
   it('reject returns the payslip untouched when already rejected', async () => {
     payslips.findOneBy.mockResolvedValue({
-      ...payslip,
+      ...payslipData,
       status: PayslipStatus.REJECTED,
     });
     await expect(service.reject(payslip.id)).resolves.toMatchObject({
@@ -185,7 +186,7 @@ describe('PayslipsService', () => {
 
   it('reject rejects an already-approved payslip', async () => {
     payslips.findOneBy.mockResolvedValue({
-      ...payslip,
+      ...payslipData,
       status: PayslipStatus.APPROVED,
     });
     await expect(service.reject(payslip.id)).rejects.toBeInstanceOf(
@@ -210,10 +211,14 @@ describe('PayslipsService', () => {
   });
 
   it('restore recovers a soft-deleted payslip', async () => {
-    const deleted = { ...payslip, deletedAt: new Date() };
+    const deleted = { ...payslipData, deletedAt: new Date() };
     payslips.findOne.mockResolvedValue(deleted);
     payslips.recover.mockResolvedValue(payslip);
-    await expect(service.restore(payslip.id)).resolves.toBe(payslip);
+    await expect(service.restore(payslip.id)).resolves.toMatchObject({
+      id: payslip.id,
+      payrollId,
+      status: PayslipStatus.PENDING,
+    });
     expect(payslips.findOne).toHaveBeenCalledWith({
       where: { id: payslip.id },
       withDeleted: true,
@@ -222,7 +227,7 @@ describe('PayslipsService', () => {
   });
 
   it('restore returns the payslip untouched when not deleted', async () => {
-    payslips.findOne.mockResolvedValue({ ...payslip, deletedAt: null });
+    payslips.findOne.mockResolvedValue({ ...payslipData, deletedAt: null });
     await expect(service.restore(payslip.id)).resolves.toMatchObject({
       id: payslip.id,
     });
