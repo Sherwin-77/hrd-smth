@@ -1,5 +1,6 @@
 import { Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, ManyToOne, PrimaryColumn, type Relation, UpdateDateColumn } from "typeorm";
 import { Payroll } from "#payrolls/entities/payroll.entity.js";
+import { Employee } from "#employees/entities/employee.entity.js";
 
 export const PayslipStatus = {
     PENDING: 'pending',
@@ -13,6 +14,9 @@ export type PayslipStatus = (typeof PayslipStatus)[keyof typeof PayslipStatus];
 export class Payslip {
     @PrimaryColumn('uuid')
     id: string;
+
+    @Column({name: 'employee_id', type: 'uuid'})
+    employeeId: string
 
     @Column({name: 'payroll_id', type: 'uuid'})
     payrollId: string;
@@ -76,7 +80,11 @@ export class Payslip {
 
     @DeleteDateColumn({name: 'deleted_at'})
     deletedAt: Date | null;
-     
+
+
+    @ManyToOne(() => Employee, (employee) => employee.payslips)
+    @JoinColumn({name: 'employee_id'})
+    employee: Relation<Employee>
 
     @ManyToOne(() => Payroll, (payroll) => payroll.payslips)
     @JoinColumn({name: 'payroll_id'})

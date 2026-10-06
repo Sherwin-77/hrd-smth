@@ -6,6 +6,7 @@ export class CreatePayslipsTable1790860425100 implements MigrationInterface {
         await queryRunner.query(`
             CREATE TABLE payslips (
                 "id" UUID NOT NULL DEFAULT UUIDV7(),
+                "employee_id" UUID NOT NULL,
                 "payroll_id" UUID NOT NULL,
                 "basic_salary" DECIMAL(16, 2) NOT NULL,
                 "overtime" DECIMAL(16, 2) NOT NULL,
@@ -19,6 +20,7 @@ export class CreatePayslipsTable1790860425100 implements MigrationInterface {
                 "deleted_at" TIMESTAMPTZ(6),
 
                 CONSTRAINT "payslips_pkey" PRIMARY KEY ("id"),
+                CONSTRAINT "payslips_employee_id_fkey" FOREIGN KEY ("employee_id") REFERENCES employees("id")
                 CONSTRAINT "payslips_payroll_id_fkey" FOREIGN KEY ("payroll_id") REFERENCES payrolls("id") ON DELETE CASCADE
             );
         `);

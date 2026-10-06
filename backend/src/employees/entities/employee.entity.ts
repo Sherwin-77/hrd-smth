@@ -9,6 +9,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Payroll } from '#payrolls/entities/payroll.entity.js';
+import { Payslip } from '#payslips/entities/payslip.entity.js';
 
 export const EmployeeSex = {
   MALE: 'male',
@@ -61,10 +62,17 @@ export class Employee {
   @DeleteDateColumn({ name: 'deleted_at' })
   deletedAt: Date | null;
 
+
   @OneToMany(() => Payroll, (payroll) => payroll.employee, {
     cascade: ['soft-remove', 'recover'],
   })
   payrolls: Relation<Payroll>[];
+
+  @OneToMany(() => Payslip, (payslip) => payslip.employee, {
+    cascade: ['soft-remove', 'recover'],
+  })
+  payslips: Relation<Payslip>[];
+
 
   activePayroll: Payroll | null;
 }
