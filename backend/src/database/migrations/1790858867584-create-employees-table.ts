@@ -8,6 +8,7 @@ export class CreateEmployeesTable1790858867584 implements MigrationInterface {
                 "id" UUID NOT NULL DEFAULT UUIDV7(),
                 "name" VARCHAR(255) NOT NULL,
                 "email" VARCHAR(255) NOT NULL UNIQUE,
+                "password_hash" VARCHAR(255) NOT NULL,
                 "phone_number" VARCHAR(255) NOT NULL,
                 "address" VARCHAR(255) NOT NULL,
                 "sex" VARCHAR(255) NOT NULL,
@@ -20,7 +21,7 @@ export class CreateEmployeesTable1790858867584 implements MigrationInterface {
 
                 CONSTRAINT "employees_pkey" PRIMARY KEY ("id"),
                 CONSTRAINT "employees_email_unique" UNIQUE ("email")
-            )
+            );
         `)
     }
 

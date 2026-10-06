@@ -18,6 +18,10 @@ export class CreatePayrollsTable1790859904824 implements MigrationInterface {
                 CONSTRAINT "payrolls_pkey" PRIMARY KEY ("id"),
                 CONSTRAINT "payrolls_employee_id_fkey" FOREIGN KEY ("employee_id") REFERENCES employees("id")
             );
+
+            CREATE UNIQUE INDEX "payrolls_employee_active_unique"
+            ON payrolls ("employee_id")
+            WHERE status = 'active';
         `);
     }
 
