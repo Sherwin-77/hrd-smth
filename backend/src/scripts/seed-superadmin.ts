@@ -13,7 +13,7 @@ import {
   resolveSuperadminSeedOptions,
   seedSuperadminWithDataSource,
 } from '#database/seeds/superadmin.seed.js';
-import { AppDataSource } from '#/data-source.js';
+import { AppDataSource } from '#data-source.js';
 
 async function main(): Promise<void> {
   const options = resolveSuperadminSeedOptions();
