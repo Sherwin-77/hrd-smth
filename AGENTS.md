@@ -43,6 +43,15 @@ The backend HR domain model is fully implemented: `employees`, `payrolls`, and `
 - `docker-compose.yml` passes `NEXT_PUBLIC_*` variables at **runtime**, but `frontend/Dockerfile` builds first — anything prefixed `NEXT_PUBLIC_` is inlined into the client bundle at build time, so setting it in compose alone will not reach the browser. It needs a build arg or runtime config.
 - `npm run lint` is `eslint` with a flat config (`eslint-config-next` core-web-vitals + typescript). There is no separate typecheck script; `npx tsc --noEmit` passes on its own.
 
+### Design: simple, no AI slop
+
+- Plain and flat: solid colors (white cards on light gray pages) with thin gray borders. No gradients, glassmorphism, blur, glows, or shadows.
+- No decorative motion: no page transitions, hover lifts, fades, or animation libraries. Only functional states (loading text, disabled buttons, inline errors).
+- Typography: Inter only, default scale, regular/medium/semibold weights. No oversized hero type.
+- Restrained color: neutrals plus one accent (`blue-700`, `blue-800` hover). No multi-color palettes.
+- No decorative icons, emojis, illustrations, or stock imagery. Text labels and standard form controls only.
+- Semantic HTML with visible labels and focus states; prefer centered single-column layouts.
+
 ## Commands
 
 | Purpose | Command | CWD |
