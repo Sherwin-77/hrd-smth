@@ -1,7 +1,7 @@
 # AGENTS.md
 
 NestJS + Postgres API (`backend/`) and a Next.js frontend (`frontend/`), wired together by `docker-compose.yml`.
-The backend has an HR domain model: `employees` is fully implemented, while `payrolls` and `payslips` have entities but still stub services (see Backend).
+The backend HR domain model is fully implemented: `employees`, `payrolls`, and `payslips` all have TypeORM-backed CRUD, plus bearer-session auth under `/auth` (see Backend).
 
 ## Layout
 
@@ -15,21 +15,22 @@ The backend has an HR domain model: `employees` is fully implemented, while `pay
 - **ESM, so relative imports must carry the `.js` extension**, even when importing a `.ts` file: `import { AppModule } from './app.module.js'`. `package.json` has `"type": "module"` and `tsconfig.json` uses `module`/`moduleResolution: nodenext`.
 - Backend path alias is `#*` → `./src/*`, wired through **both** `tsconfig.json` (`paths`) and `package.json` (`imports`). Import via `#...` with the `.js` suffix: `import { Payroll } from '#payrolls/entities/payroll.entity.js'`.
 - **Tests are Vitest, not Jest** (the README still claims the old Nest defaults). `npm test` is `vitest run` over `**/*.spec.ts`; `npm run test:e2e` uses `vitest.config.e2e.ts` over `**/*.e2e-spec.ts`. Globals are enabled, so `describe`/`it`/`expect` need no import.
-- The e2e suite imports `AppModule`, so it needs a live Postgres. Unit specs do not — the shipped specs (8 files, 22 tests) run with no DB, with 5 failing on query-builder mocks (`employees.repository.spec` ×2, `employees.service.spec` ×3). The base e2e (`test/app.e2e-spec.ts`, `GET /`) passes with live Postgres; without a DB it fails with `ECONNREFUSED` as expected.
+- The e2e suite imports `AppModule`, so it needs a live Postgres. Unit specs do not — the shipped specs (13 files, 107 tests) run with no DB and all pass. The base e2e (`test/app.e2e-spec.ts`, `GET /` expecting 200) currently fails even with live Postgres: `expected 200 "OK", got 401 "Unauthorized"`, because the auth guard is global (see below) and `GET /` is not `@Public()`; without a DB it fails with `ECONNREFUSED` as expected.
 - **There is no `typecheck` script.** `npm run build` (`nest build`, `tsc` under the hood) is the typecheck. `tsconfig.build.json` excludes `test/` and `**/*spec.ts`, so a green build does not typecheck tests.
 - Lint is **oxlint with type-aware rules**, not eslint: `npm run lint` → `oxlint --type-aware src/ test/`. `.oxlintrc.json` sets `no-floating-promises: error` and turns `no-explicit-any` off.
-- Format with prettier (`singleQuote`, `trailingComma: all`). `npm run format` globs `src/**`, `test/**`, and the root-level `data-source.ts`.
+- Format with prettier (`singleQuote`, `trailingComma: all`). `npm run format` globs `src/**`, `test/**`, and a root-level `data-source.ts` path that no longer exists (the file moved to `src/data-source.ts`), so that trailing path matches nothing.
 - `main.ts` calls `app.enableCors()` with no origin config, so any frontend origin is allowed.
-- Domain state: `employees` is fully implemented (TypeORM-backed CRUD, paginated `GET /employees` with search, unique-email guard, uuid ids). `payrolls` (`Payroll`) and `payslips` (`Payslip` with `PayslipStatus`) have entities with explicit snake_case column names and `Relation<>` types, wired as `Employee 1—* Payroll 1—* Payslip` — but both services are still Nest-generated stubs returning strings, so treat them as unbuilt. `PayrollsController` still coerces `+id` while the entity PK is uuid; `PayslipsController` takes string uuid ids.
+- Auth is bearer-session based via `@nestjs/authentication`: `AuthenticationModule.forRoot({ session })` registers its guard **globally**, so every route is authenticated unless marked `@Public()` (only `POST /auth/login` is). `AuthController` offers login (email normalized + `PasswordHasher` verify, returns token/sessionId/expiresAt), logout, `me`, session list/revoke (`GET|DELETE /auth/sessions`, `DELETE /auth/sessions/:id`), and change-password. Sessions persist in `employee_sessions` through `TypeOrmSessionStore`; TTL comes from `SESSION_TTL_DAYS` (default `30d`, clamped to a positive integer, `idleTtl: 0`).
+- Domain state: `employees` is fully implemented (TypeORM-backed CRUD with soft-delete + `restore`, paginated `GET /employees` with search, unique-email guard, `password_hash` column with hasher/rehash support, `GET /employees/with-active-payroll`, uuid ids). `payrolls` has full CRUD with soft-delete + `restore`, `activate`/`deactivate` transitions, and a single-active-payroll-per-employee rule enforced in the service (pre-check plus `23505` catch — no entity-side unique decorator). `payslips` has full CRUD with soft-delete + `restore` and `approve`/`reject` transitions; updates are rejected unless `PENDING`. All three controllers sit behind `AuthenticationGuard` and validate ids with `ParseUUIDPipe` (the old `+id` coercion is gone). Statuses are const-object unions, not TS enums (`PayrollStatus`: `active`/`inactive`; `PayslipStatus`: `pending`/`approved`/`rejected`).
 
 ### Database
 
-- TypeORM CLI scripts use the ESM runner (`typeorm-ts-node-esm -d ./data-source.ts`), which loads the `.ts` data source correctly — the previous `typeorm-ts-node-commonjs` runner died with `ERR_UNKNOWN_FILE_EXTENSION`. `make:migration`, `migrate:up`, and `migrate:down` still need a live Postgres (they fail with `ECONNREFUSED` without one), so do not assume a schema change was applied just because the script was invoked.
-- DB config is **duplicated** in two files that must stay in sync: `TypeOrmModule.forRoot(...)` in `src/app.module.ts` and the `DataSource` in `data-source.ts`. Env is read straight off `process.env` (`DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`), not via `ConfigService`.
-- `synchronize: false` and `migrationsRun` is never set, so the app neither auto-creates the schema nor auto-applies migrations on boot. `src/database/migrations/` holds 3 migrations (`employees`, `payrolls`, `payslips`, all `UUIDV7()` defaults) and `data-source.ts` globs `src/database/migrations/*{.ts,.js}`. Warning: `src/scripts/make-migration.js` still generates into stale `src/migrations/${name}`, which the glob misses — fix the script before creating new migrations.
-- Runtime entity loading is via `autoLoadEntities: true` in `src/app.module.ts` (entities registered through `TypeOrmModule.forFeature`); `data-source.ts` currently sets no `entities` array (migration CLI only), so the old `src/**/*.entity` glob note no longer applies.
-- `dotenv` (`^18.0.5`) is a declared dependency; `data-source.ts` imports it via `dotenv/config`.
-- `@casl/ability` is installed but unused anywhere in `src/`; treat authorization as unbuilt.
+- TypeORM CLI scripts use the ESM runner (`typeorm-ts-node-esm -d ./src/data-source.ts`), which loads the `.ts` data source correctly — the previous `typeorm-ts-node-commonjs` runner died with `ERR_UNKNOWN_FILE_EXTENSION`. `make:migration`, `migrate:up`, and `migrate:down` still need a live Postgres (they fail with `ECONNREFUSED` without one), so do not assume a schema change was applied just because the script was invoked.
+- DB config is **duplicated** in two files that must stay in sync: `TypeOrmModule.forRoot(...)` in `src/app.module.ts` and the `DataSource` in `src/data-source.ts`. Env is read straight off `process.env` (`DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`), not via `ConfigService`.
+- `synchronize: false` and `migrationsRun` is never set, so the app neither auto-creates the schema nor auto-applies migrations on boot. `src/database/migrations/` holds 4 migration files (`employees`, `payrolls`, `payslips`, `employee-sessions`), and `src/data-source.ts` globs `src/database/migrations/*{.ts,.js}`. `src/scripts/make-migration.js` now generates into `src/database/migrations/${name}`.
+- Runtime entity loading is via `autoLoadEntities: true` in `src/app.module.ts` (entities registered through `TypeOrmModule.forFeature`); `src/data-source.ts` also sets `entities: ['src/**/*.entity{.ts,.js}']` for the migration CLI and seed script.
+- `dotenv` (`^18.0.5`) is a declared dependency; `src/data-source.ts` imports it via `dotenv/config`.
+- `@casl/ability` is installed but unused anywhere in `src/`; authentication is built (see above) but role/ability authorization is still unbuilt.
 - In `docker-compose.yml` the `db` service has a `pg_isready` healthcheck and `backend` waits on it (`condition: service_healthy`), so the backend no longer boots against a Postgres that is not ready yet.
 
 ## Frontend
@@ -50,6 +51,7 @@ The backend has an HR domain model: `employees` is fully implemented, while `pay
 | Backend typecheck | `npm run build` | `backend/` |
 | Backend unit tests | `npm test` | `backend/` |
 | Backend e2e tests (needs Postgres) | `npm run test:e2e` | `backend/` |
+| Seed starter superadmin (idempotent, needs Postgres) | `npm run seed` | `backend/` |
 | Frontend dev server (port 3000) | `npm run dev` | `frontend/` |
 | Full stack with Postgres | `docker compose up --build` | repo root |
 
@@ -57,4 +59,4 @@ Verification order that matters: `npm run build` → `npm run lint` → `npm tes
 
 ## Ports and env
 
-`db` 5432, `backend` 3001, `frontend` 3000. Docker service hostnames differ from browser-facing URLs: inside the compose network the backend is `http://backend:3001`, but the browser needs `http://localhost:3001` — hence the separate `INTERNAL_API_URL` and `NEXT_PUBLIC_API_URL` in compose. For a local non-Docker run, `backend/.env` and `backend/.env.example` exist (empty placeholders); when unset, the code falls back to `localhost:5432`, `postgres`/`secret`, database `hrd` (see `data-source.ts` and `src/app.module.ts`).
+`db` 5432, `backend` 3001, `frontend` 3000. Docker service hostnames differ from browser-facing URLs: inside the compose network the backend is `http://backend:3001`, but the browser needs `http://localhost:3001` — hence the separate `INTERNAL_API_URL` and `NEXT_PUBLIC_API_URL` in compose. For a local non-Docker run, `backend/.env` is gitignored local config and `backend/.env.example` is its template (empty `DB_*`, filled `SEED_SUPERADMIN_*` defaults for the starter superadmin); when unset, the code falls back to `localhost:5432`, `postgres`/`secret`, database `hrd` (see `src/data-source.ts` and `src/app.module.ts`). `npm run seed` is the idempotent superadmin seed (reads `SEED_SUPERADMIN_*`). Gotcha: its `#`-imports must use the `#path` form — a `#/path` typo dies under ts-node/esm with `ERR_INVALID_MODULE_SPECIFIER`.
