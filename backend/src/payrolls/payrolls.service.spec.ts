@@ -172,19 +172,17 @@ describe('PayrollsService', () => {
     expect(payrolls.save).not.toHaveBeenCalled();
   });
 
-  it('remove soft-deletes the payroll with its payslips', async () => {
-    payrolls.findOne.mockResolvedValue(payroll);
+  it('remove soft-deletes only the payroll, leaving payslips intact', async () => {
+    payrolls.findOneBy.mockResolvedValue(payroll);
     payrolls.softRemove.mockResolvedValue(payroll);
     await expect(service.remove(payroll.id)).resolves.toBeUndefined();
-    expect(payrolls.findOne).toHaveBeenCalledWith({
-      where: { id: payroll.id },
-      relations: { payslips: true },
-    });
+    expect(payrolls.findOneBy).toHaveBeenCalledWith({ id: payroll.id });
+    expect(payrolls.findOne).not.toHaveBeenCalled();
     expect(payrolls.softRemove).toHaveBeenCalledWith(payroll);
   });
 
   it('remove throws NotFoundException for unknown ids', async () => {
-    payrolls.findOne.mockResolvedValue(null);
+    payrolls.findOneBy.mockResolvedValue(null);
     await expect(service.remove('missing')).rejects.toBeInstanceOf(
       NotFoundException,
     );
@@ -198,7 +196,6 @@ describe('PayrollsService', () => {
     await expect(service.restore(payroll.id)).resolves.toBe(payroll);
     expect(payrolls.findOne).toHaveBeenCalledWith({
       where: { id: payroll.id },
-      relations: { payslips: true },
       withDeleted: true,
     });
     expect(payrolls.recover).toHaveBeenCalledWith(deleted);

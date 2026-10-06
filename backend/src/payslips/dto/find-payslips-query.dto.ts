@@ -32,6 +32,11 @@ export class FindPayslipsQueryDto {
   @Max(100)
   limit?: number = 10;
 
+  @Expose({ name: 'employee_id' })
+  @IsOptional()
+  @IsUUID()
+  employeeId?: string;
+
   @Expose({ name: 'payroll_id' })
   @IsOptional()
   @IsUUID()

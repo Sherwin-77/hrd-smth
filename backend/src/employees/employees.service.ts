@@ -23,6 +23,16 @@ export interface PaginatedEmployees {
   };
 }
 
+export interface PaginatedEmployeesWithPayroll {
+  data: EmployeeDetailResourceDto[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
 @Injectable()
 export class EmployeesService {
   constructor(
@@ -70,16 +80,18 @@ export class EmployeesService {
     if (search) {
       queryBuilder.where(
         new Brackets((qb) => {
-          qb.where('employee.name ILIKE :search', { search: `%${search}%` })
-            .orWhere('employee.email ILIKE :search', { search: `%${search}%` });
+          qb.where('employee.name ILIKE :search', {
+            search: `%${search}%`,
+          }).orWhere('employee.email ILIKE :search', { search: `%${search}%` });
         }),
       );
     }
 
-    queryBuilder.orderBy(`employee.${sortBy}`, order)
+    queryBuilder
+      .orderBy(`employee.${sortBy}`, order)
       .skip((page - 1) * limit)
       .take(limit);
-    
+
     const [employees, total] = await queryBuilder.getManyAndCount();
 
     return {
@@ -96,13 +108,68 @@ export class EmployeesService {
   }
 
   async findOne(id: string): Promise<EmployeeDetailResourceDto> {
-    const employee = await this.employees.findOneWithActivePayroll(id);
+    const employee = await this.employees.findOneDetail(id);
 
     if (!employee) {
       throw new NotFoundException(`Employee #${id} not found`);
     }
 
     return EmployeeDetailResourceDto.fromEntity(employee);
+  }
+
+  /**
+   * Paginated employee index with each row's `activePayroll` mapped.
+   * Only employees that have an active payroll are returned — built for
+   * the payslip creation flow, where the frontend needs the employee's
+   * active payroll id to bind `payroll_id`. Payslips are not loaded here
+   * — use `findOne` for the full detail with payslips.
+   */
+  async findAllWithActivePayroll(
+    query: FindEmployeesQueryDto,
+  ): Promise<PaginatedEmployeesWithPayroll> {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 10;
+    const sortBy = query.sortBy ?? 'createdAt';
+    const order = query.order ?? 'DESC';
+
+    const search = query.search?.trim();
+
+    const queryBuilder =
+      this.employees.createQueryBuilderWithActivePayroll('employee');
+
+    if (search) {
+      queryBuilder.where(
+        new Brackets((qb) => {
+          qb.where('employee.name ILIKE :search', {
+            search: `%${search}%`,
+          }).orWhere('employee.email ILIKE :search', { search: `%${search}%` });
+        }),
+      );
+    }
+
+    // The active-payroll join is a LEFT JOIN, so employees without one
+    // come back with `payroll.id` NULL — exclude them. `andWhere` appends
+    // to the search predicate above instead of overwriting it.
+    queryBuilder.andWhere('payroll.id IS NOT NULL');
+
+    queryBuilder
+      .orderBy(`employee.${sortBy}`, order)
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    const [employees, total] = await queryBuilder.getManyAndCount();
+
+    return {
+      data: employees.map((employee) =>
+        EmployeeDetailResourceDto.fromEntity(employee),
+      ),
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   async update(
@@ -197,7 +264,8 @@ export class EmployeesService {
   }
 }
 
-const normalize = (value: string) => value.trim().normalize('NFC').toLowerCase();
+const normalize = (value: string) =>
+  value.trim().normalize('NFC').toLowerCase();
 
 function stripPasswordHash(employee: Employee): void {
   delete (employee as { passwordHash?: unknown }).passwordHash;

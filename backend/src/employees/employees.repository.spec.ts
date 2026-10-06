@@ -8,6 +8,7 @@ describe('EmployeesRepository', () => {
   let createQueryBuilderMock: ReturnType<typeof vi.spyOn>;
   let queryBuilder: {
     leftJoinAndMapOne: ReturnType<typeof vi.fn>;
+    leftJoinAndSelect: ReturnType<typeof vi.fn>;
     where: ReturnType<typeof vi.fn>;
     getOne: ReturnType<typeof vi.fn>;
   };
@@ -20,6 +21,7 @@ describe('EmployeesRepository', () => {
 
     queryBuilder = {
       leftJoinAndMapOne: vi.fn().mockReturnThis(),
+      leftJoinAndSelect: vi.fn().mockReturnThis(),
       where: vi.fn().mockReturnThis(),
       getOne: vi.fn(),
     };
@@ -57,6 +59,37 @@ describe('EmployeesRepository', () => {
     ).resolves.toBeNull();
   });
 
+  it('findOneDetail joins payslips and maps the active payroll scoped by id', async () => {
+    const employee = { id: 'employee-id' } as Employee;
+    queryBuilder.getOne.mockResolvedValue(employee);
+
+    await expect(repository.findOneDetail('employee-id')).resolves.toBe(
+      employee,
+    );
+
+    expect(createQueryBuilderMock).toHaveBeenCalledWith('employee');
+    expect(queryBuilder.leftJoinAndMapOne).toHaveBeenCalledWith(
+      'employee.activePayroll',
+      'employee.payrolls',
+      'payroll',
+      'payroll.status = :activeStatus',
+      { activeStatus: PayrollStatus.ACTIVE },
+    );
+    expect(queryBuilder.leftJoinAndSelect).toHaveBeenCalledWith(
+      'employee.payslips',
+      'payslip',
+    );
+    expect(queryBuilder.where).toHaveBeenCalledWith('employee.id = :id', {
+      id: 'employee-id',
+    });
+  });
+
+  it('findOneDetail returns null when the employee is missing', async () => {
+    queryBuilder.getOne.mockResolvedValue(null);
+
+    await expect(repository.findOneDetail('missing')).resolves.toBeNull();
+  });
+
   it('findOneWithRelations loads payrolls and payslips', async () => {
     const employee = { id: 'employee-id' } as Employee;
     const findOne = vi.spyOn(repository, 'findOne').mockResolvedValue(employee);
@@ -66,7 +99,7 @@ describe('EmployeesRepository', () => {
     );
     expect(findOne).toHaveBeenCalledWith({
       where: { id: 'employee-id' },
-      relations: { payrolls: { payslips: true } },
+      relations: { payrolls: true, payslips: true },
       withDeleted: false,
     });
   });
@@ -80,7 +113,7 @@ describe('EmployeesRepository', () => {
     ).resolves.toBe(employee);
     expect(findOne).toHaveBeenCalledWith({
       where: { id: 'employee-id' },
-      relations: { payrolls: { payslips: true } },
+      relations: { payrolls: true, payslips: true },
       withDeleted: true,
     });
   });

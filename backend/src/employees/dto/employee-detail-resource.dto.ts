@@ -1,5 +1,6 @@
 import type { Employee } from '../entities/employee.entity.js';
 import { PayrollResourceDto } from '#payrolls/dto/payroll-resource.dto.js';
+import { PayslipResourceDto } from '#payslips/dto/payslip-resource.dto.js';
 import { EmployeeIndexResourceDto } from './employee-index-resource.dto.js';
 
 export class EmployeeDetailResourceDto extends EmployeeIndexResourceDto {
@@ -8,6 +9,9 @@ export class EmployeeDetailResourceDto extends EmployeeIndexResourceDto {
    * employee has no active payroll
    */
   activePayroll: PayrollResourceDto | null;
+
+  /** Payslips linked directly to the employee via `payslip.employeeId`. */
+  payslips: PayslipResourceDto[];
 
   static override fromEntity(employee: Employee): EmployeeDetailResourceDto {
     const resource = new EmployeeDetailResourceDto();
@@ -25,6 +29,9 @@ export class EmployeeDetailResourceDto extends EmployeeIndexResourceDto {
     resource.activePayroll = employee.activePayroll
       ? PayrollResourceDto.fromEntity(employee.activePayroll)
       : null;
+    resource.payslips = (employee.payslips ?? []).map((payslip) =>
+      PayslipResourceDto.fromEntity(payslip),
+    );
 
     return resource;
   }

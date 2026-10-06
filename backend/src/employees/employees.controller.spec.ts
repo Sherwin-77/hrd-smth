@@ -10,6 +10,7 @@ describe('EmployeesController', () => {
   let service: {
     create: ReturnType<typeof vi.fn>;
     findAll: ReturnType<typeof vi.fn>;
+    findAllWithActivePayroll: ReturnType<typeof vi.fn>;
     findOne: ReturnType<typeof vi.fn>;
     update: ReturnType<typeof vi.fn>;
     remove: ReturnType<typeof vi.fn>;
@@ -20,6 +21,7 @@ describe('EmployeesController', () => {
     service = {
       create: vi.fn(),
       findAll: vi.fn(),
+      findAllWithActivePayroll: vi.fn(),
       findOne: vi.fn(),
       update: vi.fn(),
       remove: vi.fn(),
@@ -67,6 +69,16 @@ describe('EmployeesController', () => {
     });
     await controller.findAll(query);
     expect(service.findAll).toHaveBeenCalledWith(query);
+  });
+
+  it('findAllWithActivePayroll forwards the query object', async () => {
+    const query = { page: 1, limit: 10 };
+    service.findAllWithActivePayroll.mockResolvedValue({
+      data: [],
+      meta: { total: 0, page: 1, limit: 10, totalPages: 0 },
+    });
+    await controller.findAllWithActivePayroll(query);
+    expect(service.findAllWithActivePayroll).toHaveBeenCalledWith(query);
   });
 
   it('findOne/update/remove/restore forward the id', async () => {

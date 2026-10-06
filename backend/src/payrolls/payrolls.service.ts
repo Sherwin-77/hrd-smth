@@ -31,7 +31,9 @@ export class PayrollsService {
     private readonly employees: Repository<Employee>,
   ) {}
 
-  async create(createPayrollDto: CreatePayrollDto): Promise<PayrollResourceDto> {
+  async create(
+    createPayrollDto: CreatePayrollDto,
+  ): Promise<PayrollResourceDto> {
     const employee = await this.employees.findOneBy({
       id: createPayrollDto.employeeId,
     });
@@ -134,16 +136,16 @@ export class PayrollsService {
   }
 
   async remove(id: string): Promise<void> {
-    const payroll = await this.findOneOrFail(id, { payslips: true });
-    // Soft-deletes the payroll and cascades to its payslips
-    // via `cascade: ['soft-remove', 'recover']` on the relation.
+    const payroll = await this.findOneOrFail(id);
+    // Soft-deletes only the payroll. Payslips survive and stay linked
+    // to the employee via `payslip.employeeId` until the employee itself
+    // is soft-deleted (cascade lives on `Employee.payslips`).
     await this.payrolls.softRemove(payroll);
   }
 
   async restore(id: string): Promise<PayrollResourceDto> {
     const payroll = await this.payrolls.findOne({
       where: { id },
-      relations: { payslips: true },
       withDeleted: true,
     });
     if (!payroll) {
@@ -179,13 +181,8 @@ export class PayrollsService {
     return this.payrolls.save(payroll);
   }
 
-  private async findOneOrFail(
-    id: string,
-    relations?: { payslips: true },
-  ): Promise<Payroll> {
-    const payroll = relations
-      ? await this.payrolls.findOne({ where: { id }, relations })
-      : await this.payrolls.findOneBy({ id });
+  private async findOneOrFail(id: string): Promise<Payroll> {
+    const payroll = await this.payrolls.findOneBy({ id });
     if (!payroll) {
       throw new NotFoundException(`Payroll #${id} not found`);
     }

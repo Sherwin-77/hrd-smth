@@ -31,7 +31,9 @@ export class PayslipsService {
     private readonly payrolls: Repository<Payroll>,
   ) {}
 
-  async create(createPayslipDto: CreatePayslipDto): Promise<PayslipResourceDto> {
+  async create(
+    createPayslipDto: CreatePayslipDto,
+  ): Promise<PayslipResourceDto> {
     const payroll = await this.payrolls.findOneBy({
       id: createPayslipDto.payrollId,
     });
@@ -42,6 +44,7 @@ export class PayslipsService {
     }
 
     const payslip = this.payslips.create({
+      employeeId: payroll.employeeId,
       payrollId: createPayslipDto.payrollId,
       basicSalary: createPayslipDto.basicSalary,
       overtime: createPayslipDto.overtime ?? 0,
@@ -63,6 +66,12 @@ export class PayslipsService {
 
     const queryBuilder = this.payslips.createQueryBuilder('payslip');
 
+    if (query.employeeId) {
+      queryBuilder.andWhere('payslip.employeeId = :employeeId', {
+        employeeId: query.employeeId,
+      });
+    }
+
     if (query.payrollId) {
       queryBuilder.andWhere('payslip.payrollId = :payrollId', {
         payrollId: query.payrollId,
@@ -75,16 +84,15 @@ export class PayslipsService {
       });
     }
 
-    queryBuilder.orderBy(`payslip.${sortBy}`, order)
+    queryBuilder
+      .orderBy(`payslip.${sortBy}`, order)
       .skip((page - 1) * limit)
       .take(limit);
 
     const [payslips, total] = await queryBuilder.getManyAndCount();
 
     return {
-      data: payslips.map((payslip) => 
-        PayslipResourceDto.fromEntity(payslip)
-      ),
+      data: payslips.map((payslip) => PayslipResourceDto.fromEntity(payslip)),
       meta: {
         total,
         page,

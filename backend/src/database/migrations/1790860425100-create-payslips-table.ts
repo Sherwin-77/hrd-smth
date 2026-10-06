@@ -1,9 +1,8 @@
-import { MigrationInterface, QueryRunner } from "typeorm";
+import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class CreatePayslipsTable1790860425100 implements MigrationInterface {
-
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
             CREATE TABLE payslips (
                 "id" UUID NOT NULL DEFAULT UUIDV7(),
                 "employee_id" UUID NOT NULL,
@@ -20,20 +19,23 @@ export class CreatePayslipsTable1790860425100 implements MigrationInterface {
                 "deleted_at" TIMESTAMPTZ(6),
 
                 CONSTRAINT "payslips_pkey" PRIMARY KEY ("id"),
-                CONSTRAINT "payslips_employee_id_fkey" FOREIGN KEY ("employee_id") REFERENCES employees("id")
-                CONSTRAINT "payslips_payroll_id_fkey" FOREIGN KEY ("payroll_id") REFERENCES payrolls("id") ON DELETE CASCADE
+                CONSTRAINT "payslips_employee_id_fkey" FOREIGN KEY ("employee_id") REFERENCES employees("id"),
+                CONSTRAINT "payslips_payroll_id_fkey" FOREIGN KEY ("payroll_id") REFERENCES payrolls("id")
             );
         `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
+            CREATE INDEX "payslips_employee_id_index" ON payslips("employee_id");
+        `);
+
+    await queryRunner.query(`
             CREATE INDEX "payslips_payroll_id_index" ON payslips("payroll_id");
         `);
-    }
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
             DROP TABLE payslips;
         `);
-    }
-
+  }
 }

@@ -52,8 +52,6 @@ export class Payroll {
     @JoinColumn({name: 'employee_id'})
     employee: Relation<Employee>;
 
-    @OneToMany(() => Payslip, (payslip) => payslip.payroll, {
-        cascade: ['soft-remove', 'recover'],
-    })
+    @OneToMany(() => Payslip, (payslip) => payslip.payroll)
     payslips: Relation<Payslip>[]
 }

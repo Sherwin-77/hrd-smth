@@ -50,7 +50,7 @@ export class Employee {
   @Column({ name: 'join_at', type: 'timestamp with time zone' })
   joinAt: Date;
 
-  @Column({ name: 'leave_at', type: 'date' })
+  @Column({ name: 'leave_at', type: 'timestamp with time zone' })
   leaveAt: Date | null;
 
   @CreateDateColumn({ name: 'created_at' })

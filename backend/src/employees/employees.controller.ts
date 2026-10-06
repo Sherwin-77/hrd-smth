@@ -13,7 +13,11 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthenticationGuard } from '@nestjs/authentication';
-import { EmployeesService, PaginatedEmployees } from './employees.service.js';
+import {
+  EmployeesService,
+  PaginatedEmployees,
+  PaginatedEmployeesWithPayroll,
+} from './employees.service.js';
 import { CreateEmployeeDto } from './dto/create-employee.dto.js';
 import { FindEmployeesQueryDto } from './dto/find-employees-query.dto.js';
 import { UpdateEmployeeDto } from './dto/update-employee.dto.js';
@@ -33,6 +37,13 @@ export class EmployeesController {
   @Get()
   findAll(@Query() query: FindEmployeesQueryDto): Promise<PaginatedEmployees> {
     return this.employeesService.findAll(query);
+  }
+
+  @Get('with-active-payroll')
+  findAllWithActivePayroll(
+    @Query() query: FindEmployeesQueryDto,
+  ): Promise<PaginatedEmployeesWithPayroll> {
+    return this.employeesService.findAllWithActivePayroll(query);
   }
 
   @Get(':id')

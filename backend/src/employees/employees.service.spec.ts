@@ -13,8 +13,10 @@ describe('EmployeesService', () => {
     create: ReturnType<typeof vi.fn>;
     save: ReturnType<typeof vi.fn>;
     createQueryBuilder: ReturnType<typeof vi.fn>;
+    createQueryBuilderWithActivePayroll: ReturnType<typeof vi.fn>;
     findOneBy: ReturnType<typeof vi.fn>;
     findOneWithActivePayroll: ReturnType<typeof vi.fn>;
+    findOneDetail: ReturnType<typeof vi.fn>;
     findOneWithRelations: ReturnType<typeof vi.fn>;
     merge: ReturnType<typeof vi.fn>;
     softRemove: ReturnType<typeof vi.fn>;
@@ -57,7 +59,7 @@ describe('EmployeesService', () => {
   };
 
   function mockFindOneResult(result: Employee | null) {
-    repository.findOneWithActivePayroll.mockResolvedValue(result);
+    repository.findOneDetail.mockResolvedValue(result);
   }
 
   function mockQueryBuilderResult(rows: Employee[], total: number) {
@@ -72,13 +74,28 @@ describe('EmployeesService', () => {
     return qb;
   }
 
+  function mockPayrollQueryBuilderResult(rows: Employee[], total: number) {
+    const qb = {
+      where: vi.fn().mockReturnThis(),
+      andWhere: vi.fn().mockReturnThis(),
+      orderBy: vi.fn().mockReturnThis(),
+      skip: vi.fn().mockReturnThis(),
+      take: vi.fn().mockReturnThis(),
+      getManyAndCount: vi.fn().mockResolvedValue([rows, total]),
+    };
+    repository.createQueryBuilderWithActivePayroll.mockReturnValue(qb);
+    return qb;
+  }
+
   beforeEach(async () => {
     repository = {
       create: vi.fn(),
       save: vi.fn(),
       createQueryBuilder: vi.fn(),
+      createQueryBuilderWithActivePayroll: vi.fn(),
       findOneBy: vi.fn(),
       findOneWithActivePayroll: vi.fn(),
+      findOneDetail: vi.fn(),
       findOneWithRelations: vi.fn(),
       merge: vi.fn(),
       softRemove: vi.fn(),
@@ -150,20 +167,27 @@ describe('EmployeesService', () => {
     expect(result.data[0]).not.toHaveProperty('activePayroll');
   });
 
-  it('findOne delegates to the repository custom query', async () => {
-    mockFindOneResult({ ...employeeData, activePayroll: null } as Employee);
+  it('findOne delegates to the repository detail query', async () => {
+    mockFindOneResult({
+      ...employeeData,
+      activePayroll: null,
+      payslips: [],
+    } as Employee);
     await expect(service.findOne(employee.id)).resolves.toMatchObject({
       id: employee.id,
       email: employee.email,
       activePayroll: null,
+      payslips: [],
     });
-    expect(repository.findOneWithActivePayroll).toHaveBeenCalledWith(
-      employee.id,
-    );
+    expect(repository.findOneDetail).toHaveBeenCalledWith(employee.id);
   });
 
   it('findOne embeds the active payroll when one exists', async () => {
-    mockFindOneResult({ ...employeeData, activePayroll } as Employee);
+    mockFindOneResult({
+      ...employeeData,
+      activePayroll,
+      payslips: [],
+    } as Employee);
     await expect(service.findOne(employee.id)).resolves.toMatchObject({
       id: employee.id,
       activePayroll: {
@@ -174,6 +198,71 @@ describe('EmployeesService', () => {
         status: PayrollStatus.ACTIVE,
       },
     });
+  });
+
+  it('findOne embeds the employee payslips', async () => {
+    const payslip = {
+      id: '0193e5e0-9f6a-7a1b-9c2d-4e5f6a7b8c9f',
+      employeeId: employee.id,
+      payrollId: activePayroll.id,
+      basicSalary: 5000,
+      overtime: 0,
+      tax: 250,
+      bonus: 0,
+      deduction: 0,
+      date: new Date('2026-01-31'),
+      status: 'pending',
+      createdAt: new Date('2026-01-31'),
+      updatedAt: new Date('2026-01-31'),
+    };
+    mockFindOneResult({
+      ...employeeData,
+      activePayroll,
+      payslips: [payslip],
+    } as unknown as Employee);
+    await expect(service.findOne(employee.id)).resolves.toMatchObject({
+      id: employee.id,
+      payslips: [{ id: payslip.id, employeeId: employee.id }],
+    });
+  });
+
+  it('findAllWithActivePayroll returns a paginated envelope with payrolls mapped', async () => {
+    const qb = mockPayrollQueryBuilderResult(
+      [{ ...employeeData, activePayroll, payslips: [] } as Employee],
+      1,
+    );
+    await expect(
+      service.findAllWithActivePayroll({ page: 1, limit: 10 }),
+    ).resolves.toEqual({
+      data: [
+        expect.objectContaining({
+          id: employee.id,
+          activePayroll: expect.objectContaining({ id: activePayroll.id }),
+        }),
+      ],
+      meta: { total: 1, page: 1, limit: 10, totalPages: 1 },
+    });
+    expect(repository.createQueryBuilderWithActivePayroll).toHaveBeenCalledWith(
+      'employee',
+    );
+    expect(qb.getManyAndCount).toHaveBeenCalled();
+  });
+
+  it('findAllWithActivePayroll maps one resource per employee', async () => {
+    const row = { ...employeeData, activePayroll, payslips: [] } as Employee;
+    mockPayrollQueryBuilderResult([row, row], 2);
+    const result = await service.findAllWithActivePayroll({
+      page: 1,
+      limit: 10,
+    });
+    expect(result.data).toHaveLength(2);
+    expect(result.data[0]).toHaveProperty('activePayroll');
+  });
+
+  it('findAllWithActivePayroll excludes employees without an active payroll', async () => {
+    const qb = mockPayrollQueryBuilderResult([], 0);
+    await service.findAllWithActivePayroll({ page: 1, limit: 10 });
+    expect(qb.andWhere).toHaveBeenCalledWith('payroll.id IS NOT NULL');
   });
 
   it('findOne throws NotFoundException for unknown ids', async () => {

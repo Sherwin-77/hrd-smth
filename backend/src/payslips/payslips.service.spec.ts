@@ -23,8 +23,10 @@ describe('PayslipsService', () => {
   };
 
   const payrollId = '0193e5e0-9f6a-7a1b-9c2d-4e5f6a7b8c9d';
+  const employeeId = '0193e5e0-9f6a-7a1b-9c2d-4e5f6a7b8c9c';
   const payslipData = {
     id: '0193e5e0-9f6a-7a1b-9c2d-4e5f6a7b8c9e',
+    employeeId,
     payrollId,
     basicSalary: 5000,
     overtime: 100,
@@ -85,7 +87,7 @@ describe('PayslipsService', () => {
   });
 
   it('create always starts as pending', async () => {
-    payrolls.findOneBy.mockResolvedValue({ id: payrollId });
+    payrolls.findOneBy.mockResolvedValue({ id: payrollId, employeeId });
     const pending = { ...payslipData, status: PayslipStatus.PENDING };
     payslips.create.mockReturnValue(pending);
     payslips.save.mockResolvedValue(pending);
@@ -95,9 +97,24 @@ describe('PayslipsService', () => {
     });
     expect(payslips.create).toHaveBeenCalledWith(
       expect.objectContaining({
+        employeeId,
         payrollId,
         status: PayslipStatus.PENDING,
       }),
+    );
+  });
+
+  it('create binds employeeId from the payroll', async () => {
+    payrolls.findOneBy.mockResolvedValue({ id: payrollId, employeeId });
+    payslips.create.mockReturnValue(payslipData);
+    payslips.save.mockResolvedValue(payslipData);
+
+    await expect(service.create(createDto)).resolves.toMatchObject({
+      employeeId,
+      payrollId,
+    });
+    expect(payslips.create).toHaveBeenCalledWith(
+      expect.objectContaining({ employeeId }),
     );
   });
 
@@ -216,6 +233,7 @@ describe('PayslipsService', () => {
     payslips.recover.mockResolvedValue(payslip);
     await expect(service.restore(payslip.id)).resolves.toMatchObject({
       id: payslip.id,
+      employeeId,
       payrollId,
       status: PayslipStatus.PENDING,
     });
