@@ -254,6 +254,76 @@ export async function fetchEmployee(
   );
 }
 
+// The backend DTOs map camelCase properties from snake_case keys
+// (`@Expose({ name: "phone_number" })`, etc.), so request bodies must
+// use snake_case. Verified: camelCase payloads are rejected with 400.
+export interface CreateEmployeePayload {
+  name: string;
+  email: string;
+  password: string;
+  phone_number: string;
+  address: string;
+  sex: "male" | "female";
+  birth_date: string;
+  join_at: string;
+  leave_at?: string;
+}
+
+export interface UpdateEmployeePayload {
+  name?: string;
+  email?: string;
+  password?: string;
+  phone_number?: string;
+  address?: string;
+  sex?: "male" | "female";
+  birth_date?: string;
+  join_at?: string;
+  leave_at?: string | null;
+}
+
+export async function createEmployee(
+  token: string,
+  payload: CreateEmployeePayload,
+): Promise<EmployeeIndex> {
+  return apiFetch<EmployeeIndex>(
+    "/employees",
+    token,
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    "Could not create the employee.",
+  );
+}
+
+export async function updateEmployee(
+  token: string,
+  id: string,
+  payload: UpdateEmployeePayload,
+): Promise<EmployeeIndex> {
+  return apiFetch<EmployeeIndex>(
+    `/employees/${id}`,
+    token,
+    {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    },
+    "Could not update the employee.",
+  );
+}
+
+export async function deleteEmployee(
+  token: string,
+  id: string,
+): Promise<void> {
+  await apiFetch<void>(
+    `/employees/${id}`,
+    token,
+    { method: "DELETE" },
+    "Could not delete the employee.",
+  );
+}
+
 export async function fetchPayroll(
   token: string,
   id: string,
@@ -318,7 +388,11 @@ export async function changePasswordRequest(
     token,
     {
       method: "POST",
-      body: JSON.stringify({ currentPassword, newPassword }),
+      // Backend `ChangePasswordDto` exposes snake_case keys.
+      body: JSON.stringify({
+        current_password: currentPassword,
+        new_password: newPassword,
+      }),
     },
     "Could not change the password.",
   );
