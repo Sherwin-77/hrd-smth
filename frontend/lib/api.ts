@@ -14,6 +14,83 @@ export interface LoginResponse {
   sessionId: string;
 }
 
+export interface PayrollSummary {
+  id: string;
+  employeeId: string;
+  accountNumber: string;
+  accountName: string;
+  taxPercentage: number;
+  status: "active" | "inactive";
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PayslipSummary {
+  id: string;
+  employeeId: string;
+  payrollId: string;
+  basicSalary: number;
+  overtime: number;
+  tax: number;
+  bonus: number;
+  deduction: number;
+  date: string;
+  status: "pending" | "approved" | "rejected";
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EmployeeDetail {
+  id: string;
+  name: string;
+  email: string;
+  phoneNumber: string;
+  address: string;
+  sex: string;
+  birthDate: string;
+  joinAt: string;
+  leaveAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  activePayroll: PayrollSummary | null;
+  payslips: PayslipSummary[];
+}
+
+export interface EmployeeIndex {
+  id: string;
+  name: string;
+  email: string;
+  phoneNumber: string;
+  address: string;
+  sex: string;
+  birthDate: string;
+  joinAt: string;
+  leaveAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Paginated<T> {
+  data: T[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+export interface AuthSession {
+  id: string;
+  createdAt: string;
+  lastUsedAt: string;
+  expiresAt: string;
+  revokedAt: string | null;
+  userAgent: string | null;
+  ipAddress: string | null;
+  isCurrent: boolean;
+}
+
 const TOKEN_KEY = "hr.auth.token";
 const EMPLOYEE_KEY = "hr.auth.employee";
 
@@ -28,6 +105,38 @@ function backendMessage(body: BackendErrorBody | null, fallback: string) {
     return body.message;
   }
   return fallback;
+}
+
+async function apiFetch<T>(
+  path: string,
+  token: string,
+  init?: RequestInit,
+  fallback = "Request failed. Please try again.",
+): Promise<T> {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    ...init,
+    headers: {
+      "Content-Type": "application/json",
+      ...(init?.headers ?? {}),
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!res.ok) {
+    let body: BackendErrorBody | null = null;
+    try {
+      body = (await res.json()) as BackendErrorBody;
+    } catch {
+      body = null;
+    }
+    if (res.status === 401) {
+      throw new Error("Session expired. Please sign in again.");
+    }
+    throw new Error(backendMessage(body, fallback));
+  }
+  if (res.status === 204) {
+    return undefined as T;
+  }
+  return (await res.json()) as T;
 }
 
 export async function loginRequest(
@@ -66,6 +175,153 @@ export async function fetchCurrentEmployee(token: string) {
     throw new Error("Session expired. Please sign in again.");
   }
   return (await res.json()) as LoginEmployee;
+}
+
+export async function fetchCurrentEmployeeDetail(
+  token: string,
+): Promise<EmployeeDetail> {
+  return apiFetch<EmployeeDetail>(
+    "/auth/me",
+    token,
+    undefined,
+    "Could not load your profile.",
+  );
+}
+
+export interface ListQuery {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: string;
+}
+
+function toQueryString(query: ListQuery): string {
+  const params = new URLSearchParams();
+  if (query.page) params.set("page", String(query.page));
+  if (query.limit) params.set("limit", String(query.limit));
+  const search = query.search?.trim();
+  if (search) params.set("search", search);
+  if (query.status) params.set("status", query.status);
+  const text = params.toString();
+  return text ? `?${text}` : "";
+}
+
+export async function listEmployees(
+  token: string,
+  query: ListQuery,
+): Promise<Paginated<EmployeeIndex>> {
+  return apiFetch<Paginated<EmployeeIndex>>(
+    `/employees${toQueryString(query)}`,
+    token,
+    undefined,
+    "Could not load employees.",
+  );
+}
+
+export async function listPayrolls(
+  token: string,
+  query: ListQuery,
+): Promise<Paginated<PayrollSummary>> {
+  return apiFetch<Paginated<PayrollSummary>>(
+    `/payrolls${toQueryString(query)}`,
+    token,
+    undefined,
+    "Could not load payrolls.",
+  );
+}
+
+export async function listPayslips(
+  token: string,
+  query: ListQuery,
+): Promise<Paginated<PayslipSummary>> {
+  return apiFetch<Paginated<PayslipSummary>>(
+    `/payslips${toQueryString(query)}`,
+    token,
+    undefined,
+    "Could not load payslips.",
+  );
+}
+
+export async function fetchEmployee(
+  token: string,
+  id: string,
+): Promise<EmployeeDetail> {
+  return apiFetch<EmployeeDetail>(
+    `/employees/${id}`,
+    token,
+    undefined,
+    "Could not load the employee.",
+  );
+}
+
+export async function fetchPayroll(
+  token: string,
+  id: string,
+): Promise<PayrollSummary> {
+  return apiFetch<PayrollSummary>(
+    `/payrolls/${id}`,
+    token,
+    undefined,
+    "Could not load the payroll.",
+  );
+}
+
+export async function fetchPayslip(
+  token: string,
+  id: string,
+): Promise<PayslipSummary> {
+  return apiFetch<PayslipSummary>(
+    `/payslips/${id}`,
+    token,
+    undefined,
+    "Could not load the payslip.",
+  );
+}
+
+export async function listSessions(token: string): Promise<AuthSession[]> {
+  return apiFetch<AuthSession[]>(
+    "/auth/sessions",
+    token,
+    undefined,
+    "Could not load sessions.",
+  );
+}
+
+export async function revokeSession(
+  token: string,
+  sessionId: string,
+): Promise<void> {
+  await apiFetch<void>(
+    `/auth/sessions/${sessionId}`,
+    token,
+    { method: "DELETE" },
+    "Could not revoke the session.",
+  );
+}
+
+export async function revokeOtherSessions(token: string): Promise<void> {
+  await apiFetch<void>(
+    "/auth/sessions",
+    token,
+    { method: "DELETE" },
+    "Could not revoke other sessions.",
+  );
+}
+
+export async function changePasswordRequest(
+  token: string,
+  currentPassword: string,
+  newPassword: string,
+): Promise<void> {
+  await apiFetch<void>(
+    "/auth/change-password",
+    token,
+    {
+      method: "POST",
+      body: JSON.stringify({ currentPassword, newPassword }),
+    },
+    "Could not change the password.",
+  );
 }
 
 export async function logoutRequest(token: string) {

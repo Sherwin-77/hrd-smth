@@ -1,22 +1,33 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   clearAuthSession,
-  fetchCurrentEmployee,
+  fetchCurrentEmployeeDetail,
   getAuthToken,
-  getStoredEmployee,
-  logoutRequest,
-  type LoginEmployee,
+  listEmployees,
+  listPayslips,
+  type EmployeeDetail,
 } from "@/lib/api";
+
+interface OverviewStats {
+  employeeTotal: number | null;
+  pendingPayslips: number | null;
+}
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [employee, setEmployee] = useState<LoginEmployee | null>(
-    () => getStoredEmployee(),
+  const [detail, setDetail] = useState<EmployeeDetail | null>(null);
+  const [stats, setStats] = useState<OverviewStats>({
+    employeeTotal: null,
+    pendingPayslips: null,
+  });
+  const [status, setStatus] = useState<"loading" | "ready" | "error">(
+    "loading",
   );
-  const [status, setStatus] = useState<"loading" | "ready">("loading");
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const token = getAuthToken();
@@ -24,58 +35,144 @@ export default function DashboardPage() {
       router.replace("/login");
       return;
     }
-
-    fetchCurrentEmployee(token)
-      .then((current) => {
-        setEmployee(current);
+    Promise.all([
+      fetchCurrentEmployeeDetail(token),
+      listEmployees(token, { page: 1, limit: 1 }),
+      listPayslips(token, { page: 1, limit: 1, status: "pending" }),
+    ])
+      .then(([profile, employees, pending]) => {
+        setDetail(profile);
+        setStats({
+          employeeTotal: employees.meta.total,
+          pendingPayslips: pending.meta.total,
+        });
         setStatus("ready");
       })
-      .catch(() => {
-        clearAuthSession();
-        router.replace("/login");
+      .catch((err: unknown) => {
+        if (err instanceof Error && err.message.includes("Session expired")) {
+          clearAuthSession();
+          router.replace("/login");
+          return;
+        }
+        setError(err instanceof Error ? err.message : "Could not load.");
+        setStatus("error");
       });
   }, [router]);
 
-  async function handleSignOut() {
-    const token = getAuthToken();
-    if (token) {
-      try {
-        await logoutRequest(token);
-      } catch {
-        // Session is already invalid; still sign out locally.
-      }
-    }
-    clearAuthSession();
-    router.push("/login");
+  if (status === "loading") {
+    return <p className="text-sm text-gray-600">Loading...</p>;
   }
 
-  if (status === "loading" && !employee) {
+  if (status === "error") {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-gray-100 px-4">
-        <p className="text-sm text-gray-600">Loading...</p>
-      </main>
+      <section className="rounded-lg border border-gray-200 bg-white p-6">
+        <h1 className="text-xl font-semibold text-gray-900">Overview</h1>
+        <p role="alert" className="mt-4 text-sm text-red-700">
+          {error ?? "Could not load the dashboard."}
+        </p>
+      </section>
     );
   }
 
+  const payslipCount = detail?.payslips.length ?? 0;
+  const activePayroll = detail?.activePayroll ?? null;
+
+  const cards = [
+    {
+      label: "Employees",
+      value: stats.employeeTotal === null ? "-" : String(stats.employeeTotal),
+      hint: "Total employee records",
+      href: "/dashboard/employees",
+      linkText: "Browse employees",
+    },
+    {
+      label: "Active payroll",
+      value: activePayroll ? activePayroll.accountName : "None",
+      hint: activePayroll
+        ? `Account ${activePayroll.accountNumber}`
+        : "No active payroll on your profile",
+      href: "/dashboard/payrolls",
+      linkText: "View payrolls",
+    },
+    {
+      label: "Your payslips",
+      value: String(payslipCount),
+      hint: "Payslips linked to your profile",
+      href: "/dashboard/payslips",
+      linkText: "View payslips",
+    },
+    {
+      label: "Pending payslips",
+      value:
+        stats.pendingPayslips === null ? "-" : String(stats.pendingPayslips),
+      hint: "Awaiting approval",
+      href: "/dashboard/payslips",
+      linkText: "Review pending",
+    },
+  ];
+
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gray-100 px-4 py-12">
-      <section className="w-full max-w-sm rounded-lg border border-gray-200 bg-white p-8">
-        <h1 className="text-xl font-semibold text-gray-900">Welcome</h1>
+    <div className="flex flex-col gap-6">
+      <section className="rounded-lg border border-gray-200 bg-white p-6">
+        <h1 className="text-xl font-semibold text-gray-900">Overview</h1>
         <p className="mt-1 text-sm text-gray-600">
-          You are signed in as:
+          Signed in as {detail?.name ?? "Employee"} ({detail?.email ?? ""}).
         </p>
-        <p className="mt-4 text-sm font-medium text-gray-900">
-          {employee?.name}
-        </p>
-        <p className="text-sm text-gray-600">{employee?.email}</p>
-        <button
-          type="button"
-          onClick={handleSignOut}
-          className="mt-6 w-full rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-        >
-          Sign Out
-        </button>
       </section>
-    </main>
+
+      <section aria-label="Summary" className="grid gap-4 sm:grid-cols-2">
+        {cards.map((card) => (
+          <div
+            key={card.label}
+            className="rounded-lg border border-gray-200 bg-white p-5"
+          >
+            <h2 className="text-sm font-medium text-gray-600">{card.label}</h2>
+            <p className="mt-1 text-xl font-semibold text-gray-900">
+              {card.value}
+            </p>
+            <p className="mt-1 text-sm text-gray-600">{card.hint}</p>
+            <Link
+              href={card.href}
+              className="mt-3 inline-block text-sm font-medium text-blue-700 hover:underline"
+            >
+              {card.linkText}
+            </Link>
+          </div>
+        ))}
+      </section>
+
+      <section
+        aria-label="Profile summary"
+        className="rounded-lg border border-gray-200 bg-white p-6"
+      >
+        <h2 className="text-base font-semibold text-gray-900">Your profile</h2>
+        <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+          <div>
+            <dt className="font-medium text-gray-600">Name</dt>
+            <dd className="text-gray-900">{detail?.name ?? "-"}</dd>
+          </div>
+          <div>
+            <dt className="font-medium text-gray-600">Email</dt>
+            <dd className="text-gray-900">{detail?.email ?? "-"}</dd>
+          </div>
+          <div>
+            <dt className="font-medium text-gray-600">Phone</dt>
+            <dd className="text-gray-900">{detail?.phoneNumber ?? "-"}</dd>
+          </div>
+          <div>
+            <dt className="font-medium text-gray-600">Joined</dt>
+            <dd className="text-gray-900">
+              {detail ? new Date(detail.joinAt).toLocaleDateString() : "-"}
+            </dd>
+          </div>
+        </dl>
+        <Link
+          href="/dashboard/account"
+          className="mt-4 inline-block text-sm font-medium text-blue-700 hover:underline"
+        >
+          Manage account
+        </Link>
+      </section>
+    </div>
   );
 }
