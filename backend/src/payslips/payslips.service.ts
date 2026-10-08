@@ -11,7 +11,7 @@ import {
   PayslipSortField,
 } from './dto/find-payslips-query.dto.js';
 import { UpdatePayslipDto } from './dto/update-payslip.dto.js';
-import { Payslip, PayslipStatus } from './entities/payslip.entity.js';
+import { Payslip, PayslipStatus, calculatePayslipTotal } from './entities/payslip.entity.js';
 import { Payroll } from '#payrolls/entities/payroll.entity.js';
 import { PayslipResourceDto } from './dto/payslip-resource.dto.js';
 import { PaginatedPayslipsResponseDto } from './dto/paginated-payslips-resource.dto.js';
@@ -31,6 +31,7 @@ export interface PaginatedPayslips {
 const PAYSLIP_SORT_COLUMNS: Record<PayslipSortField, string> = {
   date: 'date',
   basic_salary: 'basicSalary',
+  total: 'total',
   created_at: 'createdAt',
   updated_at: 'updatedAt',
 };
@@ -64,6 +65,13 @@ export class PayslipsService {
       tax: createPayslipDto.tax ?? 0,
       bonus: createPayslipDto.bonus ?? 0,
       deduction: createPayslipDto.deduction ?? 0,
+      total: calculatePayslipTotal({
+        basicSalary: createPayslipDto.basicSalary,
+        overtime: createPayslipDto.overtime ?? 0,
+        tax: createPayslipDto.tax ?? 0,
+        bonus: createPayslipDto.bonus ?? 0,
+        deduction: createPayslipDto.deduction ?? 0,
+      }),
       date: new Date(createPayslipDto.date),
       status: PayslipStatus.PENDING,
     });
@@ -144,6 +152,13 @@ export class PayslipsService {
       ...(updatePayslipDto.date !== undefined
         ? { date: new Date(updatePayslipDto.date) }
         : {}),
+    });
+    merged.total = calculatePayslipTotal({
+      basicSalary: Number(merged.basicSalary ?? 0),
+      overtime: Number(merged.overtime ?? 0),
+      tax: Number(merged.tax ?? 0),
+      bonus: Number(merged.bonus ?? 0),
+      deduction: Number(merged.deduction ?? 0),
     });
     return PayslipResourceDto.fromEntity(await this.payslips.save(merged));
   }

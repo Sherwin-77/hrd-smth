@@ -14,6 +14,7 @@ import { PayslipStatus } from '../entities/payslip.entity.js';
 export const PAYSLIP_SORTABLE_FIELDS = [
   'date',
   'basic_salary',
+  'total',
   'created_at',
   'updated_at',
 ] as const;

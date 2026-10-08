@@ -35,6 +35,7 @@ export interface PayslipSummary {
   tax: number;
   bonus: number;
   deduction: number;
+  total: number;
   date: string;
   status: "pending" | "approved" | "rejected";
   created_at: string;

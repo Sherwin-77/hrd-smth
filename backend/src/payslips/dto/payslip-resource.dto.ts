@@ -30,6 +30,9 @@ export class PayslipResourceDto {
   @Expose({ name: 'deduction' })
   deduction: number;
 
+  @Expose({ name: 'total' })
+  total: number;
+
   @Expose({ name: 'date' })
   date: Date;
 
@@ -52,6 +55,7 @@ export class PayslipResourceDto {
     resource.tax = payslip.tax;
     resource.bonus = payslip.bonus;
     resource.deduction = payslip.deduction;
+    resource.total = payslip.total;
     resource.date = payslip.date;
     resource.status = payslip.status;
     resource.createdAt = payslip.createdAt;

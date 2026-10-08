@@ -12,10 +12,6 @@ import {
 
 const PAGE_SIZE = 10;
 
-function netPay(row: PayslipSummary): number {
-  return row.basic_salary + row.overtime + row.bonus - row.tax - row.deduction;
-}
-
 export default function PayslipsPage() {
   const router = useRouter();
   const [rows, setRows] = useState<PayslipSummary[]>([]);
@@ -159,7 +155,7 @@ export default function PayslipsPage() {
                     {row.deduction}
                   </td>
                   <td className="px-4 py-2 font-medium text-gray-900">
-                    {netPay(row)}
+                    {row.total}
                   </td>
                   <td className="px-4 py-2">
                     <span className="inline-block rounded-md border border-gray-200 bg-white px-2 py-0.5 text-xs font-medium text-gray-700">

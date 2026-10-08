@@ -68,13 +68,6 @@ export default function PayslipDetailPage() {
     );
   }
 
-  const net =
-    payslip.basic_salary +
-    payslip.overtime +
-    payslip.bonus -
-    payslip.tax -
-    payslip.deduction;
-
   return (
     <div className="flex flex-col gap-4">
       <section className="rounded-lg border border-gray-200 bg-white p-6">
@@ -118,7 +111,7 @@ export default function PayslipDetailPage() {
           </div>
           <div>
             <dt className="font-medium text-gray-600">Net pay</dt>
-            <dd className="font-medium text-gray-900">{net}</dd>
+            <dd className="font-medium text-gray-900">{payslip.total}</dd>
           </div>
           <div>
             <dt className="font-medium text-gray-600">Status</dt>

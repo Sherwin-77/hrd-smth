@@ -12,6 +12,7 @@ export class CreatePayslipsTable1790860425100 implements MigrationInterface {
                 "tax" DECIMAL(16, 2) NOT NULL,
                 "bonus" DECIMAL(16, 2) NOT NULL,
                 "deduction" DECIMAL(16, 2) NOT NULL,
+                "total" DECIMAL(16, 2) NOT NULL,
                 "date" DATE NOT NULL,
                 "status" VARCHAR(255) NOT NULL,
                 "created_at" TIMESTAMPTZ(6),

@@ -10,6 +10,28 @@ export const PayslipStatus = {
 
 export type PayslipStatus = (typeof PayslipStatus)[keyof typeof PayslipStatus];
 
+export interface PayslipAmounts {
+    basicSalary: number;
+    overtime: number;
+    tax: number;
+    bonus: number;
+    deduction: number;
+}
+
+/**
+ * Net pay: basic + overtime - tax + bonus - deduction.
+ * Rounded to 2 decimals to match `DECIMAL(16, 2)`; may be negative.
+ */
+export function calculatePayslipTotal(amounts: PayslipAmounts): number {
+    const total =
+        amounts.basicSalary +
+        amounts.overtime -
+        amounts.tax +
+        amounts.bonus -
+        amounts.deduction;
+    return Math.round((total + Number.EPSILON) * 100) / 100;
+}
+
 @Entity("payslips")
 export class Payslip {
     @PrimaryColumn('uuid')
@@ -60,6 +82,14 @@ export class Payslip {
         'scale': 2,
     })
     deduction: number = 0.00;
+
+    @Column({
+        name: 'total',
+        type: 'decimal',
+        'precision': 16,
+        'scale': 2,
+    })
+    total: number = 0.00;
 
     @Column({name: 'date', type: 'date'})
     date: Date;
