@@ -23,6 +23,7 @@ import { ContractResourceDto } from './dto/contract-resource.dto.js';
 import { PaginatedContractsResponseDto } from './dto/paginated-contracts-resource.dto.js';
 import { ContractTypeDto } from './dto/contract-type.dto.js';
 import { PaginationMetaDto } from '#common/dto/pagination.dto.js';
+import { v7 as uuidv7 } from 'uuid';
 
 /** Wire `sort_by` values (snake_case) mapped to entity columns. */
 const CONTRACT_SORT_COLUMNS: Record<ContractSortField, string> = {
@@ -66,6 +67,7 @@ export class ContractsService {
     );
 
     const contract = this.contracts.create({
+      id: uuidv7(),
       employeeId: createContractDto.employeeId,
       type: createContractDto.type,
       title: createContractDto.title,

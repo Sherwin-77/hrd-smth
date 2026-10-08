@@ -20,6 +20,7 @@ import { PaginationMetaDto } from '#common/dto/pagination.dto.js';
 import { EmployeesRepository } from './employees.repository.js';
 import { Employee } from './entities/employee.entity.js';
 import { Brackets } from 'typeorm';
+import { v7 as uuidv7 } from 'uuid';
 
 export interface PaginatedEmployees {
   data: EmployeeIndexResourceDto[];
@@ -62,6 +63,7 @@ export class EmployeesService {
     await this.validateEmailAvailable(createEmployeeDto.email);
 
     const employee = this.employees.create({
+      id: uuidv7(),
       name: createEmployeeDto.name,
       email: normalize(createEmployeeDto.email),
       phoneNumber: createEmployeeDto.phoneNumber,

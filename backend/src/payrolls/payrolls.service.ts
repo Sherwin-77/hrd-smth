@@ -16,6 +16,7 @@ import { Employee } from '#employees/entities/employee.entity.js';
 import { PayrollResourceDto } from './dto/payroll-resource.dto.js';
 import { PaginatedPayrollsResponseDto } from './dto/paginated-payrolls-resource.dto.js';
 import { PaginationMetaDto } from '#common/dto/pagination.dto.js';
+import { v7 as uuidv7 } from 'uuid';
 
 export interface PaginatedPayrolls {
   data: PayrollResourceDto[];
@@ -59,6 +60,7 @@ export class PayrollsService {
     await this.validateNoActivePayroll(createPayrollDto.employeeId);
 
     const payroll = this.payrolls.create({
+      id: uuidv7(),
       employeeId: createPayrollDto.employeeId,
       accountNumber: createPayrollDto.accountNumber,
       accountName: createPayrollDto.accountName,

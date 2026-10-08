@@ -16,6 +16,7 @@ import { Payroll } from '#payrolls/entities/payroll.entity.js';
 import { PayslipResourceDto } from './dto/payslip-resource.dto.js';
 import { PaginatedPayslipsResponseDto } from './dto/paginated-payslips-resource.dto.js';
 import { PaginationMetaDto } from '#common/dto/pagination.dto.js';
+import { v7 as uuidv7 } from 'uuid';
 
 export interface PaginatedPayslips {
   data: PayslipResourceDto[];
@@ -58,6 +59,7 @@ export class PayslipsService {
     }
 
     const payslip = this.payslips.create({
+      id: uuidv7(),
       employeeId: payroll.employeeId,
       payrollId: createPayslipDto.payrollId,
       basicSalary: createPayslipDto.basicSalary,

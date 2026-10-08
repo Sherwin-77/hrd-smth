@@ -1,5 +1,5 @@
 import { PasswordHasher } from '@nestjs/authentication';
-import { randomUUID } from 'node:crypto';
+import { v7 as uuidv7 } from 'uuid';
 import type { DataSource, Repository } from 'typeorm';
 import {
   Employee,
@@ -71,7 +71,7 @@ export async function seedSuperadmin(
 
   const passwordHash = await passwords.hash(options.password);
   const employee = repository.create({
-    id: randomUUID(),
+    id: uuidv7(),
     name: options.name,
     email,
     phoneNumber: options.phoneNumber,
