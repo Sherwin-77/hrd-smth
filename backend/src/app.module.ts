@@ -8,6 +8,7 @@ import { EmployeesModule } from './employees/employees.module.js';
 import { PayrollsModule } from './payrolls/payrolls.module.js';
 import { PayslipsModule } from './payslips/payslips.module.js';
 import { AuthModule } from './auth/auth.module.js';
+import { ContractsModule } from './contracts/contracts.module.js';
 
 function sessionAbsoluteTtl(): `${number}d` {
   const days = Number(process.env.SESSION_TTL_DAYS ?? '30');
@@ -41,6 +42,7 @@ function sessionAbsoluteTtl(): `${number}d` {
     EmployeesModule,
     PayrollsModule,
     PayslipsModule,
+    ContractsModule,
   ],
 })
 export class AppModule {}
