@@ -140,9 +140,9 @@ export default function SessionsPage() {
               >
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="text-sm font-medium text-gray-900">
-                    {session.userAgent ?? "Unknown device"}
+                    {session.user_agent ?? "Unknown device"}
                   </p>
-                  {session.isCurrent ? (
+                  {session.is_current ? (
                     <span className="rounded-md bg-blue-700 px-2 py-0.5 text-xs font-medium text-white">
                       Current
                     </span>
@@ -151,20 +151,20 @@ export default function SessionsPage() {
                 <dl className="mt-2 grid gap-1 text-sm text-gray-600 sm:grid-cols-2">
                   <div>
                     <dt className="font-medium">IP address</dt>
-                    <dd>{session.ipAddress ?? "-"}</dd>
+                    <dd>{session.ip_address ?? "-"}</dd>
                   </div>
                   <div>
                     <dt className="font-medium">Last used</dt>
                     <dd>
-                      {new Date(session.lastUsedAt).toLocaleString()}
+                      {new Date(session.last_used_at).toLocaleString()}
                     </dd>
                   </div>
                   <div>
                     <dt className="font-medium">Expires</dt>
-                    <dd>{new Date(session.expiresAt).toLocaleString()}</dd>
+                    <dd>{new Date(session.expires_at).toLocaleString()}</dd>
                   </div>
                 </dl>
-                {session.isCurrent ? null : (
+                {session.is_current ? null : (
                   <button
                     type="button"
                     onClick={() => handleRevokeOne(session.id)}

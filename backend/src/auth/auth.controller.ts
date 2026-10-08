@@ -22,6 +22,7 @@ import type { Request } from 'express';
 import { AuthService } from './auth.service.js';
 import { LoginDto } from './dto/login.dto.js';
 import { ChangePasswordDto } from './dto/change-password.dto.js';
+import { LoginResponseDto } from './dto/login-response.dto.js';
 import { SessionResourceDto } from './dto/session-resource.dto.js';
 import type { Employee } from '#employees/entities/employee.entity.js';
 import { EmployeesRepository } from '#employees/employees.repository.js';
@@ -49,18 +50,16 @@ export class AuthController {
   @Post('login')
   @Public()
   @HttpCode(HttpStatus.OK)
-  async login(@Body() dto: LoginDto, @Req() req: Request) {
+  async login(
+    @Body() dto: LoginDto,
+    @Req() req: Request,
+  ): Promise<LoginResponseDto> {
     const result = await this.auth.login(
       dto.email,
       dto.password,
       sessionMeta(req),
     );
-    return {
-      employee: result.employee,
-      token: result.token,
-      expiresAt: result.expiresAt,
-      sessionId: result.sessionId,
-    };
+    return LoginResponseDto.fromLogin(result.employee, result);
   }
 
   @Post('logout')

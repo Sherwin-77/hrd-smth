@@ -13,7 +13,7 @@ import {
 const PAGE_SIZE = 10;
 
 function netPay(row: PayslipSummary): number {
-  return row.basicSalary + row.overtime + row.bonus - row.tax - row.deduction;
+  return row.basic_salary + row.overtime + row.bonus - row.tax - row.deduction;
 }
 
 export default function PayslipsPage() {
@@ -44,7 +44,7 @@ export default function PayslipsPage() {
         if (!active) return;
         setRows(result.data);
         setTotal(result.meta.total);
-        setTotalPages(result.meta.totalPages);
+        setTotalPages(result.meta.total_pages);
         setStatus("ready");
       })
       .catch((err: unknown) => {
@@ -151,7 +151,7 @@ export default function PayslipsPage() {
                   <td className="px-4 py-2 font-medium text-gray-900">
                     {new Date(row.date).toLocaleDateString()}
                   </td>
-                  <td className="px-4 py-2 text-gray-700">{row.basicSalary}</td>
+                  <td className="px-4 py-2 text-gray-700">{row.basic_salary}</td>
                   <td className="px-4 py-2 text-gray-700">{row.overtime}</td>
                   <td className="px-4 py-2 text-gray-700">{row.bonus}</td>
                   <td className="px-4 py-2 text-gray-700">{row.tax}</td>

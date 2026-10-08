@@ -42,7 +42,7 @@ export default function EmployeesPage() {
         if (!active) return;
         setRows(result.data);
         setTotal(result.meta.total);
-        setTotalPages(result.meta.totalPages);
+        setTotalPages(result.meta.total_pages);
         setStatus("ready");
       })
       .catch((err: unknown) => {
@@ -151,10 +151,10 @@ export default function EmployeesPage() {
                   </td>
                   <td className="px-4 py-2 text-gray-700">{row.email}</td>
                   <td className="px-4 py-2 text-gray-700">
-                    {row.phoneNumber}
+                    {row.phone_number}
                   </td>
                   <td className="px-4 py-2 text-gray-700">
-                    {new Date(row.joinAt).toLocaleDateString()}
+                    {new Date(row.join_at).toLocaleDateString()}
                   </td>
                   <td className="px-4 py-2">
                     <Link

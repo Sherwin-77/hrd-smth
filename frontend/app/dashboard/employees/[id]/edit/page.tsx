@@ -39,12 +39,12 @@ export default function EditEmployeePage() {
           name: detail.name,
           email: detail.email,
           password: "",
-          phoneNumber: detail.phoneNumber,
+          phoneNumber: detail.phone_number,
           address: detail.address,
           sex: detail.sex === "female" ? "female" : "male",
-          birthDate: toDateInput(detail.birthDate),
-          joinAt: toDateInput(detail.joinAt),
-          leaveAt: toDateInput(detail.leaveAt),
+          birthDate: toDateInput(detail.birth_date),
+          joinAt: toDateInput(detail.join_at),
+          leaveAt: toDateInput(detail.leave_at),
         });
         setStatus("ready");
       })

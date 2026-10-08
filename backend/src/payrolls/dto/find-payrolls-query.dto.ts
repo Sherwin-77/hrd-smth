@@ -12,11 +12,12 @@ import {
 import { Expose } from 'class-transformer';
 import { PayrollStatus } from '../entities/payroll.entity.js';
 
+/** Wire values are snake_case; services map them to entity columns. */
 export const PAYROLL_SORTABLE_FIELDS = [
-  'accountNumber',
-  'accountName',
-  'createdAt',
-  'updatedAt',
+  'account_number',
+  'account_name',
+  'created_at',
+  'updated_at',
 ] as const;
 export type PayrollSortField = (typeof PAYROLL_SORTABLE_FIELDS)[number];
 
@@ -47,9 +48,10 @@ export class FindPayrollsQueryDto {
   @IsEnum(PayrollStatus)
   status?: PayrollStatus;
 
+  @Expose({ name: 'sort_by' })
   @IsOptional()
   @IsIn(PAYROLL_SORTABLE_FIELDS as unknown as string[])
-  sortBy?: PayrollSortField = 'createdAt';
+  sortBy?: PayrollSortField = 'created_at';
 
   @IsOptional()
   @IsIn(['ASC', 'DESC'])

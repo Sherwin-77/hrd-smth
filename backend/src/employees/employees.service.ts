@@ -5,10 +5,18 @@ import {
 } from '@nestjs/common';
 import { PasswordHasher } from '@nestjs/authentication';
 import { CreateEmployeeDto } from './dto/create-employee.dto.js';
-import { FindEmployeesQueryDto } from './dto/find-employees-query.dto.js';
+import {
+  EmployeeSortField,
+  FindEmployeesQueryDto,
+} from './dto/find-employees-query.dto.js';
 import { UpdateEmployeeDto } from './dto/update-employee.dto.js';
 import { EmployeeDetailResourceDto } from './dto/employee-detail-resource.dto.js';
 import { EmployeeIndexResourceDto } from './dto/employee-index-resource.dto.js';
+import {
+  PaginatedEmployeesResponseDto,
+  PaginatedEmployeesWithPayrollResponseDto,
+} from './dto/paginated-employees-resource.dto.js';
+import { PaginationMetaDto } from '#common/dto/pagination.dto.js';
 import { EmployeesRepository } from './employees.repository.js';
 import { Employee } from './entities/employee.entity.js';
 import { Brackets } from 'typeorm';
@@ -33,6 +41,14 @@ export interface PaginatedEmployeesWithPayroll {
   };
 }
 
+/** Wire `sort_by` values (snake_case) mapped to entity columns. */
+const EMPLOYEE_SORT_COLUMNS: Record<EmployeeSortField, string> = {
+  name: 'name',
+  email: 'email',
+  join_at: 'joinAt',
+  created_at: 'createdAt',
+};
+
 @Injectable()
 export class EmployeesService {
   constructor(
@@ -40,7 +56,9 @@ export class EmployeesService {
     private readonly passwords: PasswordHasher,
   ) {}
 
-  async create(createEmployeeDto: CreateEmployeeDto): Promise<Employee> {
+  async create(
+    createEmployeeDto: CreateEmployeeDto,
+  ): Promise<EmployeeIndexResourceDto> {
     await this.validateEmailAvailable(createEmployeeDto.email);
 
     const employee = this.employees.create({
@@ -59,18 +77,19 @@ export class EmployeesService {
 
     try {
       const saved = await this.employees.save(employee);
-      stripPasswordHash(saved);
-      return saved;
+      return EmployeeIndexResourceDto.fromEntity(saved);
     } catch (error) {
       this.throwIfUniqueViolation(error, createEmployeeDto.email);
       throw error;
     }
   }
 
-  async findAll(query: FindEmployeesQueryDto): Promise<PaginatedEmployees> {
+  async findAll(
+    query: FindEmployeesQueryDto,
+  ): Promise<PaginatedEmployeesResponseDto> {
     const page = query.page ?? 1;
     const limit = query.limit ?? 10;
-    const sortBy = query.sortBy ?? 'createdAt';
+    const sortBy = EMPLOYEE_SORT_COLUMNS[query.sortBy ?? 'created_at'];
     const order = query.order ?? 'DESC';
 
     const search = query.search?.trim();
@@ -94,17 +113,12 @@ export class EmployeesService {
 
     const [employees, total] = await queryBuilder.getManyAndCount();
 
-    return {
-      data: employees.map((employee) =>
-        EmployeeIndexResourceDto.fromEntity(employee),
-      ),
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
+    const response = new PaginatedEmployeesResponseDto();
+    response.data = employees.map((employee) =>
+      EmployeeIndexResourceDto.fromEntity(employee),
+    );
+    response.meta = PaginationMetaDto.fromTotal(total, page, limit);
+    return response;
   }
 
   async findOne(id: string): Promise<EmployeeDetailResourceDto> {
@@ -126,10 +140,10 @@ export class EmployeesService {
    */
   async findAllWithActivePayroll(
     query: FindEmployeesQueryDto,
-  ): Promise<PaginatedEmployeesWithPayroll> {
+  ): Promise<PaginatedEmployeesWithPayrollResponseDto> {
     const page = query.page ?? 1;
     const limit = query.limit ?? 10;
-    const sortBy = query.sortBy ?? 'createdAt';
+    const sortBy = EMPLOYEE_SORT_COLUMNS[query.sortBy ?? 'created_at'];
     const order = query.order ?? 'DESC';
 
     const search = query.search?.trim();
@@ -159,23 +173,18 @@ export class EmployeesService {
 
     const [employees, total] = await queryBuilder.getManyAndCount();
 
-    return {
-      data: employees.map((employee) =>
-        EmployeeDetailResourceDto.fromEntity(employee),
-      ),
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
+    const response = new PaginatedEmployeesWithPayrollResponseDto();
+    response.data = employees.map((employee) =>
+      EmployeeDetailResourceDto.fromEntity(employee),
+    );
+    response.meta = PaginationMetaDto.fromTotal(total, page, limit);
+    return response;
   }
 
   async update(
     id: string,
     updateEmployeeDto: UpdateEmployeeDto,
-  ): Promise<Employee> {
+  ): Promise<EmployeeIndexResourceDto> {
     const employee = await this.findOneEntityOrFail(id);
 
     if (updateEmployeeDto.email) {
@@ -201,8 +210,7 @@ export class EmployeesService {
 
     try {
       const saved = await this.employees.save(merged);
-      stripPasswordHash(saved);
-      return saved;
+      return EmployeeIndexResourceDto.fromEntity(saved);
     } catch (error) {
       this.throwIfUniqueViolation(error, updateEmployeeDto.email);
       throw error;
@@ -219,17 +227,16 @@ export class EmployeesService {
     await this.employees.softRemove(employee);
   }
 
-  async restore(id: string): Promise<Employee> {
+  async restore(id: string): Promise<EmployeeIndexResourceDto> {
     const employee = await this.employees.findOneWithRelations(id, true);
     if (!employee) {
       throw new NotFoundException(`Employee #${id} not found`);
     }
     if (!employee.deletedAt) {
-      return employee;
+      return EmployeeIndexResourceDto.fromEntity(employee);
     }
     const recovered = await this.employees.recover(employee);
-    stripPasswordHash(recovered);
-    return recovered;
+    return EmployeeIndexResourceDto.fromEntity(recovered);
   }
 
   private async findOneEntityOrFail(id: string): Promise<Employee> {
@@ -266,7 +273,3 @@ export class EmployeesService {
 
 const normalize = (value: string) =>
   value.trim().normalize('NFC').toLowerCase();
-
-function stripPasswordHash(employee: Employee): void {
-  delete (employee as { passwordHash?: unknown }).passwordHash;
-}

@@ -72,9 +72,9 @@ export default function PayrollDetailPage() {
     <div className="flex flex-col gap-4">
       <section className="rounded-lg border border-gray-200 bg-white p-6">
         <h1 className="text-xl font-semibold text-gray-900">
-          {payroll.accountName}
+          {payroll.account_name}
         </h1>
-        <p className="mt-1 text-sm text-gray-600">{payroll.accountNumber}</p>
+        <p className="mt-1 text-sm text-gray-600">{payroll.account_number}</p>
         <Link
           href="/dashboard/payrolls"
           className="mt-3 inline-block text-sm font-medium text-blue-700 hover:underline"
@@ -91,15 +91,15 @@ export default function PayrollDetailPage() {
         <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
           <div>
             <dt className="font-medium text-gray-600">Account name</dt>
-            <dd className="text-gray-900">{payroll.accountName}</dd>
+            <dd className="text-gray-900">{payroll.account_name}</dd>
           </div>
           <div>
             <dt className="font-medium text-gray-600">Account number</dt>
-            <dd className="text-gray-900">{payroll.accountNumber}</dd>
+            <dd className="text-gray-900">{payroll.account_number}</dd>
           </div>
           <div>
             <dt className="font-medium text-gray-600">Tax percentage</dt>
-            <dd className="text-gray-900">{payroll.taxPercentage}</dd>
+            <dd className="text-gray-900">{payroll.tax_percentage}</dd>
           </div>
           <div>
             <dt className="font-medium text-gray-600">Status</dt>
@@ -108,13 +108,13 @@ export default function PayrollDetailPage() {
           <div>
             <dt className="font-medium text-gray-600">Created</dt>
             <dd className="text-gray-900">
-              {new Date(payroll.createdAt).toLocaleString()}
+              {new Date(payroll.created_at).toLocaleString()}
             </dd>
           </div>
           <div>
             <dt className="font-medium text-gray-600">Updated</dt>
             <dd className="text-gray-900">
-              {new Date(payroll.updatedAt).toLocaleString()}
+              {new Date(payroll.updated_at).toLocaleString()}
             </dd>
           </div>
         </dl>

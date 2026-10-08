@@ -75,7 +75,7 @@ export default function DashboardPage() {
   }
 
   const payslipCount = detail?.payslips.length ?? 0;
-  const activePayroll = detail?.activePayroll ?? null;
+  const activePayroll = detail?.active_payroll ?? null;
 
   const cards = [
     {
@@ -87,9 +87,9 @@ export default function DashboardPage() {
     },
     {
       label: "Active payroll",
-      value: activePayroll ? activePayroll.accountName : "None",
+      value: activePayroll ? activePayroll.account_name : "None",
       hint: activePayroll
-        ? `Account ${activePayroll.accountNumber}`
+        ? `Account ${activePayroll.account_number}`
         : "No active payroll on your profile",
       href: "/dashboard/payrolls",
       linkText: "View payrolls",
@@ -157,12 +157,12 @@ export default function DashboardPage() {
           </div>
           <div>
             <dt className="font-medium text-gray-600">Phone</dt>
-            <dd className="text-gray-900">{detail?.phoneNumber ?? "-"}</dd>
+            <dd className="text-gray-900">{detail?.phone_number ?? "-"}</dd>
           </div>
           <div>
             <dt className="font-medium text-gray-600">Joined</dt>
             <dd className="text-gray-900">
-              {detail ? new Date(detail.joinAt).toLocaleDateString() : "-"}
+              {detail ? new Date(detail.join_at).toLocaleDateString() : "-"}
             </dd>
           </div>
         </dl>

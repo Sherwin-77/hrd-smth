@@ -122,7 +122,11 @@ describe('EmployeesService', () => {
     repository.create.mockReturnValue(employee);
     repository.save.mockResolvedValue(employee);
 
-    await expect(service.create(createDto)).resolves.toBe(employee);
+    await expect(service.create(createDto)).resolves.toMatchObject({
+      id: employee.id,
+      email: employee.email,
+      name: employee.name,
+    });
     expect(repository.save).toHaveBeenCalled();
   });
 
@@ -305,7 +309,10 @@ describe('EmployeesService', () => {
     const deleted = { ...employeeData, deletedAt: new Date() };
     repository.findOneWithRelations.mockResolvedValue(deleted);
     repository.recover.mockResolvedValue(employee);
-    await expect(service.restore(employee.id)).resolves.toBe(employee);
+    await expect(service.restore(employee.id)).resolves.toMatchObject({
+      id: employee.id,
+      email: employee.email,
+    });
     expect(repository.findOneWithRelations).toHaveBeenCalledWith(
       employee.id,
       true,

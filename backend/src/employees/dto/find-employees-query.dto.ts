@@ -1,11 +1,12 @@
-import { Type } from 'class-transformer';
+import { Expose, Type } from 'class-transformer';
 import { IsIn, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
+/** Wire values are snake_case; services map them to entity columns. */
 export const EMPLOYEE_SORTABLE_FIELDS = [
   'name',
   'email',
-  'joinAt',
-  'createdAt',
+  'join_at',
+  'created_at',
 ] as const;
 export type EmployeeSortField = (typeof EMPLOYEE_SORTABLE_FIELDS)[number];
 
@@ -27,9 +28,10 @@ export class FindEmployeesQueryDto {
   @IsString()
   search?: string;
 
+  @Expose({ name: 'sort_by' })
   @IsOptional()
   @IsIn(EMPLOYEE_SORTABLE_FIELDS as unknown as string[])
-  sortBy?: EmployeeSortField = 'createdAt';
+  sortBy?: EmployeeSortField = 'created_at';
 
   @IsOptional()
   @IsIn(['ASC', 'DESC'])

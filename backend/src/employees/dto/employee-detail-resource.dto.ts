@@ -1,3 +1,4 @@
+import { Expose, Type } from 'class-transformer';
 import type { Employee } from '../entities/employee.entity.js';
 import { PayrollResourceDto } from '#payrolls/dto/payroll-resource.dto.js';
 import { PayslipResourceDto } from '#payslips/dto/payslip-resource.dto.js';
@@ -8,9 +9,13 @@ export class EmployeeDetailResourceDto extends EmployeeIndexResourceDto {
    * The employee's payroll with status `active`, or `null` when the
    * employee has no active payroll
    */
+  @Expose({ name: 'active_payroll' })
+  @Type(() => PayrollResourceDto)
   activePayroll: PayrollResourceDto | null;
 
   /** Payslips linked directly to the employee via `payslip.employeeId`. */
+  @Expose({ name: 'payslips' })
+  @Type(() => PayslipResourceDto)
   payslips: PayslipResourceDto[];
 
   static override fromEntity(employee: Employee): EmployeeDetailResourceDto {

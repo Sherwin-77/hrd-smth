@@ -7,52 +7,53 @@ export interface LoginEmployee {
   email: string;
 }
 
+// Response shapes mirror the backend snake_case wire format.
 export interface LoginResponse {
   employee: LoginEmployee;
   token: string;
-  expiresAt: string;
-  sessionId: string;
+  expires_at: string;
+  session_id: string;
 }
 
 export interface PayrollSummary {
   id: string;
-  employeeId: string;
-  accountNumber: string;
-  accountName: string;
-  taxPercentage: number;
+  employee_id: string;
+  account_number: string;
+  account_name: string;
+  tax_percentage: number;
   status: "active" | "inactive";
-  createdAt: string;
-  updatedAt: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface PayslipSummary {
   id: string;
-  employeeId: string;
-  payrollId: string;
-  basicSalary: number;
+  employee_id: string;
+  payroll_id: string;
+  basic_salary: number;
   overtime: number;
   tax: number;
   bonus: number;
   deduction: number;
   date: string;
   status: "pending" | "approved" | "rejected";
-  createdAt: string;
-  updatedAt: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface EmployeeDetail {
   id: string;
   name: string;
   email: string;
-  phoneNumber: string;
+  phone_number: string;
   address: string;
   sex: string;
-  birthDate: string;
-  joinAt: string;
-  leaveAt: string | null;
-  createdAt: string;
-  updatedAt: string;
-  activePayroll: PayrollSummary | null;
+  birth_date: string;
+  join_at: string;
+  leave_at: string | null;
+  created_at: string;
+  updated_at: string;
+  active_payroll: PayrollSummary | null;
   payslips: PayslipSummary[];
 }
 
@@ -60,14 +61,14 @@ export interface EmployeeIndex {
   id: string;
   name: string;
   email: string;
-  phoneNumber: string;
+  phone_number: string;
   address: string;
   sex: string;
-  birthDate: string;
-  joinAt: string;
-  leaveAt: string | null;
-  createdAt: string;
-  updatedAt: string;
+  birth_date: string;
+  join_at: string;
+  leave_at: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Paginated<T> {
@@ -76,19 +77,19 @@ export interface Paginated<T> {
     total: number;
     page: number;
     limit: number;
-    totalPages: number;
+    total_pages: number;
   };
 }
 
 export interface AuthSession {
   id: string;
-  createdAt: string;
-  lastUsedAt: string;
-  expiresAt: string;
-  revokedAt: string | null;
-  userAgent: string | null;
-  ipAddress: string | null;
-  isCurrent: boolean;
+  created_at: string;
+  last_used_at: string;
+  expires_at: string;
+  revoked_at: string | null;
+  user_agent: string | null;
+  ip_address: string | null;
+  is_current: boolean;
 }
 
 const TOKEN_KEY = "hr.auth.token";

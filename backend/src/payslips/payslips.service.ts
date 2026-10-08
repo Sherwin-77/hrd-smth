@@ -6,11 +6,16 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreatePayslipDto } from './dto/create-payslip.dto.js';
-import { FindPayslipsQueryDto } from './dto/find-payslips-query.dto.js';
+import {
+  FindPayslipsQueryDto,
+  PayslipSortField,
+} from './dto/find-payslips-query.dto.js';
 import { UpdatePayslipDto } from './dto/update-payslip.dto.js';
 import { Payslip, PayslipStatus } from './entities/payslip.entity.js';
 import { Payroll } from '#payrolls/entities/payroll.entity.js';
 import { PayslipResourceDto } from './dto/payslip-resource.dto.js';
+import { PaginatedPayslipsResponseDto } from './dto/paginated-payslips-resource.dto.js';
+import { PaginationMetaDto } from '#common/dto/pagination.dto.js';
 
 export interface PaginatedPayslips {
   data: PayslipResourceDto[];
@@ -21,6 +26,14 @@ export interface PaginatedPayslips {
     totalPages: number;
   };
 }
+
+/** Wire `sort_by` values (snake_case) mapped to entity columns. */
+const PAYSLIP_SORT_COLUMNS: Record<PayslipSortField, string> = {
+  date: 'date',
+  basic_salary: 'basicSalary',
+  created_at: 'createdAt',
+  updated_at: 'updatedAt',
+};
 
 @Injectable()
 export class PayslipsService {
@@ -58,10 +71,12 @@ export class PayslipsService {
     return PayslipResourceDto.fromEntity(await this.payslips.save(payslip));
   }
 
-  async findAll(query: FindPayslipsQueryDto): Promise<PaginatedPayslips> {
+  async findAll(
+    query: FindPayslipsQueryDto,
+  ): Promise<PaginatedPayslipsResponseDto> {
     const page = query.page ?? 1;
     const limit = query.limit ?? 10;
-    const sortBy = query.sortBy ?? 'createdAt';
+    const sortBy = PAYSLIP_SORT_COLUMNS[query.sortBy ?? 'created_at'];
     const order = query.order ?? 'DESC';
 
     const queryBuilder = this.payslips.createQueryBuilder('payslip');
@@ -91,19 +106,16 @@ export class PayslipsService {
 
     const [payslips, total] = await queryBuilder.getManyAndCount();
 
-    return {
-      data: payslips.map((payslip) => PayslipResourceDto.fromEntity(payslip)),
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
+    const response = new PaginatedPayslipsResponseDto();
+    response.data = payslips.map((payslip) =>
+      PayslipResourceDto.fromEntity(payslip),
+    );
+    response.meta = PaginationMetaDto.fromTotal(total, page, limit);
+    return response;
   }
 
   async findOne(id: string): Promise<PayslipResourceDto> {
-    return this.findOneOrFail(id);
+    return PayslipResourceDto.fromEntity(await this.findOneOrFail(id));
   }
 
   async update(
@@ -158,7 +170,7 @@ export class PayslipsService {
   async approve(id: string): Promise<PayslipResourceDto> {
     const payslip = await this.findOneOrFail(id);
     if (payslip.status === PayslipStatus.APPROVED) {
-      return payslip;
+      return PayslipResourceDto.fromEntity(payslip);
     }
     this.throwIfNotPending(payslip, 'approve');
     payslip.status = PayslipStatus.APPROVED;
@@ -168,7 +180,7 @@ export class PayslipsService {
   async reject(id: string): Promise<PayslipResourceDto> {
     const payslip = await this.findOneOrFail(id);
     if (payslip.status === PayslipStatus.REJECTED) {
-      return payslip;
+      return PayslipResourceDto.fromEntity(payslip);
     }
     this.throwIfNotPending(payslip, 'reject');
     payslip.status = PayslipStatus.REJECTED;

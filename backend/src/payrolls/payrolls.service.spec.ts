@@ -93,7 +93,11 @@ describe('PayrollsService', () => {
     payrolls.create.mockReturnValue(payroll);
     payrolls.save.mockResolvedValue(payroll);
 
-    await expect(service.create(createDto)).resolves.toBe(payroll);
+    await expect(service.create(createDto)).resolves.toMatchObject({
+      id: payroll.id,
+      employeeId,
+      status: PayrollStatus.ACTIVE,
+    });
     expect(payrolls.findOneBy).toHaveBeenCalled();
     expect(payrolls.create).toHaveBeenCalledWith(
       expect.objectContaining({ status: PayrollStatus.ACTIVE }),
@@ -193,7 +197,10 @@ describe('PayrollsService', () => {
     const deleted = { ...payrollData, deletedAt: new Date() };
     payrolls.findOne.mockResolvedValue(deleted);
     payrolls.recover.mockResolvedValue(payroll);
-    await expect(service.restore(payroll.id)).resolves.toBe(payroll);
+    await expect(service.restore(payroll.id)).resolves.toMatchObject({
+      id: payroll.id,
+      employeeId,
+    });
     expect(payrolls.findOne).toHaveBeenCalledWith({
       where: { id: payroll.id },
       withDeleted: true,

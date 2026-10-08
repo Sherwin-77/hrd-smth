@@ -13,16 +13,16 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthenticationGuard } from '@nestjs/authentication';
-import {
-  EmployeesService,
-  PaginatedEmployees,
-  PaginatedEmployeesWithPayroll,
-} from './employees.service.js';
+import { EmployeesService } from './employees.service.js';
 import { CreateEmployeeDto } from './dto/create-employee.dto.js';
 import { FindEmployeesQueryDto } from './dto/find-employees-query.dto.js';
 import { UpdateEmployeeDto } from './dto/update-employee.dto.js';
 import { EmployeeDetailResourceDto } from './dto/employee-detail-resource.dto.js';
-import { Employee } from './entities/employee.entity.js';
+import { EmployeeIndexResourceDto } from './dto/employee-index-resource.dto.js';
+import {
+  PaginatedEmployeesResponseDto,
+  PaginatedEmployeesWithPayrollResponseDto,
+} from './dto/paginated-employees-resource.dto.js';
 
 @Controller('employees')
 @UseGuards(AuthenticationGuard)
@@ -30,19 +30,23 @@ export class EmployeesController {
   constructor(private readonly employeesService: EmployeesService) {}
 
   @Post()
-  create(@Body() createEmployeeDto: CreateEmployeeDto): Promise<Employee> {
+  create(
+    @Body() createEmployeeDto: CreateEmployeeDto,
+  ): Promise<EmployeeIndexResourceDto> {
     return this.employeesService.create(createEmployeeDto);
   }
 
   @Get()
-  findAll(@Query() query: FindEmployeesQueryDto): Promise<PaginatedEmployees> {
+  findAll(
+    @Query() query: FindEmployeesQueryDto,
+  ): Promise<PaginatedEmployeesResponseDto> {
     return this.employeesService.findAll(query);
   }
 
   @Get('with-active-payroll')
   findAllWithActivePayroll(
     @Query() query: FindEmployeesQueryDto,
-  ): Promise<PaginatedEmployeesWithPayroll> {
+  ): Promise<PaginatedEmployeesWithPayrollResponseDto> {
     return this.employeesService.findAllWithActivePayroll(query);
   }
 
@@ -57,7 +61,7 @@ export class EmployeesController {
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateEmployeeDto: UpdateEmployeeDto,
-  ): Promise<Employee> {
+  ): Promise<EmployeeIndexResourceDto> {
     return this.employeesService.update(id, updateEmployeeDto);
   }
 
@@ -68,7 +72,9 @@ export class EmployeesController {
   }
 
   @Patch(':id/restore')
-  restore(@Param('id', ParseUUIDPipe) id: string): Promise<Employee> {
+  restore(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<EmployeeIndexResourceDto> {
     return this.employeesService.restore(id);
   }
 }

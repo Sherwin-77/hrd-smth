@@ -13,11 +13,12 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthenticationGuard } from '@nestjs/authentication';
-import { PayrollsService, PaginatedPayrolls } from './payrolls.service.js';
+import { PayrollsService } from './payrolls.service.js';
 import { CreatePayrollDto } from './dto/create-payroll.dto.js';
 import { FindPayrollsQueryDto } from './dto/find-payrolls-query.dto.js';
 import { UpdatePayrollDto } from './dto/update-payroll.dto.js';
 import { PayrollResourceDto } from './dto/payroll-resource.dto.js';
+import { PaginatedPayrollsResponseDto } from './dto/paginated-payrolls-resource.dto.js';
 
 @Controller('payrolls')
 @UseGuards(AuthenticationGuard)
@@ -30,7 +31,9 @@ export class PayrollsController {
   }
 
   @Get()
-  findAll(@Query() query: FindPayrollsQueryDto): Promise<PaginatedPayrolls> {
+  findAll(
+    @Query() query: FindPayrollsQueryDto,
+  ): Promise<PaginatedPayrollsResponseDto> {
     return this.payrollsService.findAll(query);
   }
 

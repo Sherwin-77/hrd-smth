@@ -6,11 +6,16 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, Not, Repository } from 'typeorm';
 import { CreatePayrollDto } from './dto/create-payroll.dto.js';
-import { FindPayrollsQueryDto } from './dto/find-payrolls-query.dto.js';
+import {
+  FindPayrollsQueryDto,
+  PayrollSortField,
+} from './dto/find-payrolls-query.dto.js';
 import { UpdatePayrollDto } from './dto/update-payroll.dto.js';
 import { Payroll, PayrollStatus } from './entities/payroll.entity.js';
 import { Employee } from '#employees/entities/employee.entity.js';
 import { PayrollResourceDto } from './dto/payroll-resource.dto.js';
+import { PaginatedPayrollsResponseDto } from './dto/paginated-payrolls-resource.dto.js';
+import { PaginationMetaDto } from '#common/dto/pagination.dto.js';
 
 export interface PaginatedPayrolls {
   data: PayrollResourceDto[];
@@ -21,6 +26,14 @@ export interface PaginatedPayrolls {
     totalPages: number;
   };
 }
+
+/** Wire `sort_by` values (snake_case) mapped to entity columns. */
+const PAYROLL_SORT_COLUMNS: Record<PayrollSortField, string> = {
+  account_number: 'accountNumber',
+  account_name: 'accountName',
+  created_at: 'createdAt',
+  updated_at: 'updatedAt',
+};
 
 @Injectable()
 export class PayrollsService {
@@ -54,17 +67,20 @@ export class PayrollsService {
     });
 
     try {
-      return await this.payrolls.save(payroll);
+      const saved = await this.payrolls.save(payroll);
+      return PayrollResourceDto.fromEntity(saved);
     } catch (error) {
       this.throwIfActiveConflict(error, createPayrollDto.employeeId);
       throw error;
     }
   }
 
-  async findAll(query: FindPayrollsQueryDto): Promise<PaginatedPayrolls> {
+  async findAll(
+    query: FindPayrollsQueryDto,
+  ): Promise<PaginatedPayrollsResponseDto> {
     const page = query.page ?? 1;
     const limit = query.limit ?? 10;
-    const sortBy = query.sortBy ?? 'createdAt';
+    const sortBy = PAYROLL_SORT_COLUMNS[query.sortBy ?? 'created_at'];
     const order = query.order ?? 'DESC';
     const search = query.search?.trim();
 
@@ -99,21 +115,18 @@ export class PayrollsService {
       .skip((page - 1) * limit)
       .take(limit);
 
-    const [data, total] = await queryBuilder.getManyAndCount();
+    const [payrolls, total] = await queryBuilder.getManyAndCount();
 
-    return {
-      data,
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
+    const response = new PaginatedPayrollsResponseDto();
+    response.data = payrolls.map((payroll) =>
+      PayrollResourceDto.fromEntity(payroll),
+    );
+    response.meta = PaginationMetaDto.fromTotal(total, page, limit);
+    return response;
   }
 
-  async findOne(id: string): Promise<Payroll> {
-    return this.findOneOrFail(id);
+  async findOne(id: string): Promise<PayrollResourceDto> {
+    return PayrollResourceDto.fromEntity(await this.findOneOrFail(id));
   }
 
   async update(
@@ -132,7 +145,7 @@ export class PayrollsService {
         ? { taxPercentage: updatePayrollDto.taxPercentage }
         : {}),
     });
-    return this.payrolls.save(merged);
+    return PayrollResourceDto.fromEntity(await this.payrolls.save(merged));
   }
 
   async remove(id: string): Promise<void> {
@@ -152,20 +165,20 @@ export class PayrollsService {
       throw new NotFoundException(`Payroll #${id} not found`);
     }
     if (!payroll.deletedAt) {
-      return payroll;
+      return PayrollResourceDto.fromEntity(payroll);
     }
-    return this.payrolls.recover(payroll);
+    return PayrollResourceDto.fromEntity(await this.payrolls.recover(payroll));
   }
 
   async activate(id: string): Promise<PayrollResourceDto> {
     const payroll = await this.findOneOrFail(id);
     if (payroll.status === PayrollStatus.ACTIVE) {
-      return payroll;
+      return PayrollResourceDto.fromEntity(payroll);
     }
     await this.validateNoActivePayroll(payroll.employeeId, payroll.id);
     payroll.status = PayrollStatus.ACTIVE;
     try {
-      return await this.payrolls.save(payroll);
+      return PayrollResourceDto.fromEntity(await this.payrolls.save(payroll));
     } catch (error) {
       this.throwIfActiveConflict(error, payroll.employeeId);
       throw error;
@@ -175,10 +188,10 @@ export class PayrollsService {
   async deactivate(id: string): Promise<PayrollResourceDto> {
     const payroll = await this.findOneOrFail(id);
     if (payroll.status === PayrollStatus.INACTIVE) {
-      return payroll;
+      return PayrollResourceDto.fromEntity(payroll);
     }
     payroll.status = PayrollStatus.INACTIVE;
-    return this.payrolls.save(payroll);
+    return PayrollResourceDto.fromEntity(await this.payrolls.save(payroll));
   }
 
   private async findOneOrFail(id: string): Promise<Payroll> {

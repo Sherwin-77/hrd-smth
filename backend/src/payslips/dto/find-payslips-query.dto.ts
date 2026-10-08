@@ -10,11 +10,12 @@ import {
 } from 'class-validator';
 import { PayslipStatus } from '../entities/payslip.entity.js';
 
+/** Wire values are snake_case; services map them to entity columns. */
 export const PAYSLIP_SORTABLE_FIELDS = [
   'date',
-  'basicSalary',
-  'createdAt',
-  'updatedAt',
+  'basic_salary',
+  'created_at',
+  'updated_at',
 ] as const;
 export type PayslipSortField = (typeof PAYSLIP_SORTABLE_FIELDS)[number];
 
@@ -46,9 +47,10 @@ export class FindPayslipsQueryDto {
   @IsEnum(PayslipStatus)
   status?: PayslipStatus;
 
+  @Expose({ name: 'sort_by' })
   @IsOptional()
   @IsIn(PAYSLIP_SORTABLE_FIELDS as unknown as string[])
-  sortBy?: PayslipSortField = 'createdAt';
+  sortBy?: PayslipSortField = 'created_at';
 
   @IsOptional()
   @IsIn(['ASC', 'DESC'])

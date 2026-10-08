@@ -69,7 +69,7 @@ export default function PayslipDetailPage() {
   }
 
   const net =
-    payslip.basicSalary +
+    payslip.basic_salary +
     payslip.overtime +
     payslip.bonus -
     payslip.tax -
@@ -98,7 +98,7 @@ export default function PayslipDetailPage() {
         <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
           <div>
             <dt className="font-medium text-gray-600">Basic salary</dt>
-            <dd className="text-gray-900">{payslip.basicSalary}</dd>
+            <dd className="text-gray-900">{payslip.basic_salary}</dd>
           </div>
           <div>
             <dt className="font-medium text-gray-600">Overtime</dt>

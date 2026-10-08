@@ -170,7 +170,7 @@ export default function EmployeeDetailPage() {
         <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
           <div>
             <dt className="font-medium text-gray-600">Phone</dt>
-            <dd className="text-gray-900">{detail.phoneNumber}</dd>
+            <dd className="text-gray-900">{detail.phone_number}</dd>
           </div>
           <div>
             <dt className="font-medium text-gray-600">Address</dt>
@@ -179,20 +179,20 @@ export default function EmployeeDetailPage() {
           <div>
             <dt className="font-medium text-gray-600">Birth date</dt>
             <dd className="text-gray-900">
-              {new Date(detail.birthDate).toLocaleDateString()}
+              {new Date(detail.birth_date).toLocaleDateString()}
             </dd>
           </div>
           <div>
             <dt className="font-medium text-gray-600">Joined</dt>
             <dd className="text-gray-900">
-              {new Date(detail.joinAt).toLocaleDateString()}
+              {new Date(detail.join_at).toLocaleDateString()}
             </dd>
           </div>
           <div>
             <dt className="font-medium text-gray-600">Left</dt>
             <dd className="text-gray-900">
-              {detail.leaveAt
-                ? new Date(detail.leaveAt).toLocaleDateString()
+              {detail.leave_at
+                ? new Date(detail.leave_at).toLocaleDateString()
                 : "-"}
             </dd>
           </div>
@@ -206,24 +206,24 @@ export default function EmployeeDetailPage() {
         <h2 className="text-base font-semibold text-gray-900">
           Active payroll
         </h2>
-        {detail.activePayroll ? (
+        {detail.active_payroll ? (
           <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
             <div>
               <dt className="font-medium text-gray-600">Account name</dt>
               <dd className="text-gray-900">
-                {detail.activePayroll.accountName}
+                {detail.active_payroll.account_name}
               </dd>
             </div>
             <div>
               <dt className="font-medium text-gray-600">Account number</dt>
               <dd className="text-gray-900">
-                {detail.activePayroll.accountNumber}
+                {detail.active_payroll.account_number}
               </dd>
             </div>
             <div>
               <dt className="font-medium text-gray-600">Tax percentage</dt>
               <dd className="text-gray-900">
-                {detail.activePayroll.taxPercentage}
+                {detail.active_payroll.tax_percentage}
               </dd>
             </div>
           </dl>

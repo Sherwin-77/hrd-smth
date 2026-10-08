@@ -112,7 +112,7 @@ export default function AccountPage() {
             </div>
             <div>
               <dt className="font-medium text-gray-600">Phone</dt>
-              <dd className="text-gray-900">{detail?.phoneNumber}</dd>
+              <dd className="text-gray-900">{detail?.phone_number}</dd>
             </div>
             <div>
               <dt className="font-medium text-gray-600">Address</dt>
@@ -121,14 +121,14 @@ export default function AccountPage() {
             <div>
               <dt className="font-medium text-gray-600">Joined</dt>
               <dd className="text-gray-900">
-                {detail ? new Date(detail.joinAt).toLocaleDateString() : "-"}
+                {detail ? new Date(detail.join_at).toLocaleDateString() : "-"}
               </dd>
             </div>
             <div>
               <dt className="font-medium text-gray-600">Active payroll</dt>
               <dd className="text-gray-900">
-                {detail?.activePayroll
-                  ? `${detail.activePayroll.accountName} (${detail.activePayroll.accountNumber})`
+                {detail?.active_payroll
+                  ? `${detail.active_payroll.account_name} (${detail.active_payroll.account_number})`
                   : "None"}
               </dd>
             </div>

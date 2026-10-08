@@ -44,7 +44,7 @@ export default function PayrollsPage() {
         if (!active) return;
         setRows(result.data);
         setTotal(result.meta.total);
-        setTotalPages(result.meta.totalPages);
+        setTotalPages(result.meta.total_pages);
         setStatus("ready");
       })
       .catch((err: unknown) => {
@@ -158,13 +158,13 @@ export default function PayrollsPage() {
               {rows.map((row) => (
                 <tr key={row.id} className="border-b border-gray-100">
                   <td className="px-4 py-2 font-medium text-gray-900">
-                    {row.accountName}
+                    {row.account_name}
                   </td>
                   <td className="px-4 py-2 text-gray-700">
-                    {row.accountNumber}
+                    {row.account_number}
                   </td>
                   <td className="px-4 py-2 text-gray-700">
-                    {row.taxPercentage}
+                    {row.tax_percentage}
                   </td>
                   <td className="px-4 py-2">
                     <span
