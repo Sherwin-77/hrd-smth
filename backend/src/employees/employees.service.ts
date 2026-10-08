@@ -222,8 +222,8 @@ export class EmployeesService {
     if (!employee) {
       throw new NotFoundException(`Employee #${id} not found`);
     }
-    // Soft-deletes the employee and cascades to payrolls and payslips
-    // via `cascade: ['soft-remove', 'recover']` on the relations.
+    // Soft-deletes the employee and cascades to payrolls, payslips, and
+    // contracts via `cascade: ['soft-remove', 'recover']` on the relations.
     await this.employees.softRemove(employee);
   }
 

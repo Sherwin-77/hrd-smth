@@ -90,7 +90,7 @@ describe('EmployeesRepository', () => {
     await expect(repository.findOneDetail('missing')).resolves.toBeNull();
   });
 
-  it('findOneWithRelations loads payrolls and payslips', async () => {
+  it('findOneWithRelations loads payrolls, payslips, and contracts', async () => {
     const employee = { id: 'employee-id' } as Employee;
     const findOne = vi.spyOn(repository, 'findOne').mockResolvedValue(employee);
 
@@ -99,7 +99,7 @@ describe('EmployeesRepository', () => {
     );
     expect(findOne).toHaveBeenCalledWith({
       where: { id: 'employee-id' },
-      relations: { payrolls: true, payslips: true },
+      relations: { payrolls: true, payslips: true, contracts: true },
       withDeleted: false,
     });
   });
@@ -113,7 +113,7 @@ describe('EmployeesRepository', () => {
     ).resolves.toBe(employee);
     expect(findOne).toHaveBeenCalledWith({
       where: { id: 'employee-id' },
-      relations: { payrolls: true, payslips: true },
+      relations: { payrolls: true, payslips: true, contracts: true },
       withDeleted: true,
     });
   });

@@ -45,8 +45,8 @@ export class EmployeesRepository extends Repository<Employee> {
   }
 
   /**
-   * Load an employee with its payrolls and payslips so that
-   * `softRemove`/`recover` can cascade through both direct relations.
+   * Load an employee with its payrolls, payslips, and contracts so that
+   * `softRemove`/`recover` can cascade through all direct relations.
    * Payslips are linked via `payslip.employeeId` and survive payroll
    * deletion — they are only removed when the employee itself is removed.
    * Soft-deleted rows are excluded unless `withDeleted` is set.
@@ -57,7 +57,7 @@ export class EmployeesRepository extends Repository<Employee> {
   ): Promise<Employee | null> {
     return this.findOne({
       where: { id },
-      relations: { payrolls: true, payslips: true },
+      relations: { payrolls: true, payslips: true, contracts: true },
       withDeleted,
     });
   }
