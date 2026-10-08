@@ -70,17 +70,19 @@ export default function PayrollDetailPage() {
 
   return (
     <div className="flex flex-col gap-4">
+      <nav aria-label="Breadcrumb">
+        <Link
+          href="/dashboard/payrolls"
+          className="text-sm font-medium text-blue-700 hover:underline"
+        >
+          Back to payrolls
+        </Link>
+      </nav>
       <section className="rounded-lg border border-gray-200 bg-white p-6">
         <h1 className="text-xl font-semibold text-gray-900">
           {payroll.account_name}
         </h1>
         <p className="mt-1 text-sm text-gray-600">{payroll.account_number}</p>
-        <Link
-          href="/dashboard/payrolls"
-          className="mt-3 inline-block text-sm font-medium text-blue-700 hover:underline"
-        >
-          Back to payrolls
-        </Link>
       </section>
 
       <section

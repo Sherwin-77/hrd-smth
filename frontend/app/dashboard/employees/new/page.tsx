@@ -54,17 +54,19 @@ export default function NewEmployeePage() {
 
   return (
     <div className="mx-auto flex w-full max-w-xl flex-col gap-4">
+      <nav aria-label="Breadcrumb">
+        <Link
+          href="/dashboard/employees"
+          className="text-sm font-medium text-blue-700 hover:underline"
+        >
+          Back to employees
+        </Link>
+      </nav>
       <section className="rounded-lg border border-gray-200 bg-white p-6">
         <h1 className="text-xl font-semibold text-gray-900">New employee</h1>
         <p className="mt-1 text-sm text-gray-600">
           Fill in the details below to add an employee.
         </p>
-        <Link
-          href="/dashboard/employees"
-          className="mt-3 inline-block text-sm font-medium text-blue-700 hover:underline"
-        >
-          Back to employees
-        </Link>
       </section>
 
       <section

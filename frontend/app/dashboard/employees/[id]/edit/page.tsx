@@ -121,15 +121,17 @@ export default function EditEmployeePage() {
 
   return (
     <div className="mx-auto flex w-full max-w-xl flex-col gap-4">
-      <section className="rounded-lg border border-gray-200 bg-white p-6">
-        <h1 className="text-xl font-semibold text-gray-900">Edit employee</h1>
-        <p className="mt-1 text-sm text-gray-600">{initial.email}</p>
+      <nav aria-label="Breadcrumb">
         <Link
           href={`/dashboard/employees/${params.id}`}
-          className="mt-3 inline-block text-sm font-medium text-blue-700 hover:underline"
+          className="text-sm font-medium text-blue-700 hover:underline"
         >
           Back to detail
         </Link>
+      </nav>
+      <section className="rounded-lg border border-gray-200 bg-white p-6">
+        <h1 className="text-xl font-semibold text-gray-900">Edit employee</h1>
+        <p className="mt-1 text-sm text-gray-600">{initial.email}</p>
       </section>
 
       <section
