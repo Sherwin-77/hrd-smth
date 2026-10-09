@@ -19,6 +19,7 @@ import { FindPayslipsQueryDto } from './dto/find-payslips-query.dto.js';
 import { UpdatePayslipDto } from './dto/update-payslip.dto.js';
 import { PayslipResourceDto } from './dto/payslip-resource.dto.js';
 import { PaginatedPayslipsResponseDto } from './dto/paginated-payslips-resource.dto.js';
+import { EnumResourceDto } from '#common/dto/enum-resource.dto.js';
 
 @Controller('payslips')
 @UseGuards(AuthenticationGuard)
@@ -37,6 +38,11 @@ export class PayslipsController {
     @Query() query: FindPayslipsQueryDto,
   ): Promise<PaginatedPayslipsResponseDto> {
     return this.payslipsService.findAll(query);
+  }
+
+  @Get('statuses')
+  getStatuses(): EnumResourceDto[] {
+    return this.payslipsService.getStatuses();
   }
 
   @Get(':id')

@@ -417,4 +417,13 @@ describe('ContractsService', () => {
       { value: ContractType.FIXED_TIME, label: 'Fixed time' },
     ]);
   });
+
+  it('getStatuses returns all contract statuses with labels', () => {
+    expect(service.getStatuses()).toEqual([
+      { value: ContractStatus.PENDING, label: 'Pending' },
+      { value: ContractStatus.SIGNED, label: 'Signed' },
+      { value: ContractStatus.DECLINED, label: 'Declined' },
+      { value: ContractStatus.VOIDED, label: 'Voided' },
+    ]);
+  });
 });

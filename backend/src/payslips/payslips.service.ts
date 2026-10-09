@@ -20,6 +20,7 @@ import { Payroll } from '#payrolls/entities/payroll.entity.js';
 import { PayslipResourceDto } from './dto/payslip-resource.dto.js';
 import { PaginatedPayslipsResponseDto } from './dto/paginated-payslips-resource.dto.js';
 import { PaginationMetaDto } from '#common/dto/pagination.dto.js';
+import { EnumResourceDto } from '#common/dto/enum-resource.dto.js';
 import { v7 as uuidv7 } from 'uuid';
 
 export interface PaginatedPayslips {
@@ -130,6 +131,10 @@ export class PayslipsService {
 
   async findOne(id: string): Promise<PayslipResourceDto> {
     return PayslipResourceDto.fromEntity(await this.findOneOrFail(id));
+  }
+
+  getStatuses(): EnumResourceDto[] {
+    return EnumResourceDto.fromEnum(PayslipStatus);
   }
 
   async update(

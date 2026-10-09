@@ -17,6 +17,7 @@ describe('ContractsController', () => {
     void: ReturnType<typeof vi.fn>;
     restore: ReturnType<typeof vi.fn>;
     getTypes: ReturnType<typeof vi.fn>;
+    getStatuses: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(async () => {
@@ -31,6 +32,7 @@ describe('ContractsController', () => {
       void: vi.fn(),
       restore: vi.fn(),
       getTypes: vi.fn(),
+      getStatuses: vi.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -108,5 +110,12 @@ describe('ContractsController', () => {
     service.getTypes.mockReturnValue(types);
     expect(controller.getTypes()).toBe(types);
     expect(service.getTypes).toHaveBeenCalledWith();
+  });
+
+  it('getStatuses delegates to the service', () => {
+    const statuses = [{ value: 'pending', label: 'Pending' }];
+    service.getStatuses.mockReturnValue(statuses);
+    expect(controller.getStatuses()).toBe(statuses);
+    expect(service.getStatuses).toHaveBeenCalledWith();
   });
 });

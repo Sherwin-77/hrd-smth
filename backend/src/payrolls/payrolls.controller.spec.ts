@@ -16,6 +16,7 @@ describe('PayrollsController', () => {
     activate: ReturnType<typeof vi.fn>;
     deactivate: ReturnType<typeof vi.fn>;
     restore: ReturnType<typeof vi.fn>;
+    getStatuses: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(async () => {
@@ -28,6 +29,7 @@ describe('PayrollsController', () => {
       activate: vi.fn(),
       deactivate: vi.fn(),
       restore: vi.fn(),
+      getStatuses: vi.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -90,5 +92,12 @@ describe('PayrollsController', () => {
     expect(service.activate).toHaveBeenCalledWith(id);
     expect(service.deactivate).toHaveBeenCalledWith(id);
     expect(service.restore).toHaveBeenCalledWith(id);
+  });
+
+  it('getStatuses delegates to the service', () => {
+    const statuses = [{ value: 'active', label: 'Active' }];
+    service.getStatuses.mockReturnValue(statuses);
+    expect(controller.getStatuses()).toBe(statuses);
+    expect(service.getStatuses).toHaveBeenCalledWith();
   });
 });

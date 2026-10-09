@@ -131,6 +131,10 @@ export class ContractsService {
     return EnumResourceDto.fromEnum(ContractType);
   }
 
+  getStatuses(): EnumResourceDto[] {
+    return EnumResourceDto.fromEnum(ContractStatus);
+  }
+
   async update(
     id: string,
     updateContractDto: UpdateContractDto,

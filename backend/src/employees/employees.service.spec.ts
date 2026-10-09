@@ -338,4 +338,11 @@ describe('EmployeesService', () => {
     );
     expect(repository.recover).not.toHaveBeenCalled();
   });
+
+  it('getSexes returns all employee sexes with labels', () => {
+    expect(service.getSexes()).toEqual([
+      { value: EmployeeSex.MALE, label: 'Male' },
+      { value: EmployeeSex.FEMALE, label: 'Female' },
+    ]);
+  });
 });

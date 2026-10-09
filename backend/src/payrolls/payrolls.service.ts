@@ -16,6 +16,7 @@ import { Employee } from '#employees/entities/employee.entity.js';
 import { PayrollResourceDto } from './dto/payroll-resource.dto.js';
 import { PaginatedPayrollsResponseDto } from './dto/paginated-payrolls-resource.dto.js';
 import { PaginationMetaDto } from '#common/dto/pagination.dto.js';
+import { EnumResourceDto } from '#common/dto/enum-resource.dto.js';
 import { v7 as uuidv7 } from 'uuid';
 
 export interface PaginatedPayrolls {
@@ -129,6 +130,10 @@ export class PayrollsService {
 
   async findOne(id: string): Promise<PayrollResourceDto> {
     return PayrollResourceDto.fromEntity(await this.findOneOrFail(id));
+  }
+
+  getStatuses(): EnumResourceDto[] {
+    return EnumResourceDto.fromEnum(PayrollStatus);
   }
 
   async update(

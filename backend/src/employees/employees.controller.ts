@@ -19,6 +19,7 @@ import { FindEmployeesQueryDto } from './dto/find-employees-query.dto.js';
 import { UpdateEmployeeDto } from './dto/update-employee.dto.js';
 import { EmployeeDetailResourceDto } from './dto/employee-detail-resource.dto.js';
 import { EmployeeIndexResourceDto } from './dto/employee-index-resource.dto.js';
+import { EnumResourceDto } from '#common/dto/enum-resource.dto.js';
 import {
   PaginatedEmployeesResponseDto,
   PaginatedEmployeesWithPayrollResponseDto,
@@ -48,6 +49,11 @@ export class EmployeesController {
     @Query() query: FindEmployeesQueryDto,
   ): Promise<PaginatedEmployeesWithPayrollResponseDto> {
     return this.employeesService.findAllWithActivePayroll(query);
+  }
+
+  @Get('sexes')
+  getSexes(): EnumResourceDto[] {
+    return this.employeesService.getSexes();
   }
 
   @Get(':id')

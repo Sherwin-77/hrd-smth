@@ -46,6 +46,11 @@ export class ContractsController {
     return this.contractsService.getTypes();
   }
 
+  @Get('statuses')
+  getStatuses(): EnumResourceDto[] {
+    return this.contractsService.getStatuses();
+  }
+
   @Get(':id')
   findOne(
     @Param('id', ParseUUIDPipe) id: string,

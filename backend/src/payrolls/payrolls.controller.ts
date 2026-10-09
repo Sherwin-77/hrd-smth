@@ -19,6 +19,7 @@ import { FindPayrollsQueryDto } from './dto/find-payrolls-query.dto.js';
 import { UpdatePayrollDto } from './dto/update-payroll.dto.js';
 import { PayrollResourceDto } from './dto/payroll-resource.dto.js';
 import { PaginatedPayrollsResponseDto } from './dto/paginated-payrolls-resource.dto.js';
+import { EnumResourceDto } from '#common/dto/enum-resource.dto.js';
 
 @Controller('payrolls')
 @UseGuards(AuthenticationGuard)
@@ -37,6 +38,11 @@ export class PayrollsController {
     @Query() query: FindPayrollsQueryDto,
   ): Promise<PaginatedPayrollsResponseDto> {
     return this.payrollsService.findAll(query);
+  }
+
+  @Get('statuses')
+  getStatuses(): EnumResourceDto[] {
+    return this.payrollsService.getStatuses();
   }
 
   @Get(':id')

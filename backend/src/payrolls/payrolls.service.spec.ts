@@ -223,4 +223,11 @@ describe('PayrollsService', () => {
     );
     expect(payrolls.recover).not.toHaveBeenCalled();
   });
+
+  it('getStatuses returns all payroll statuses with labels', () => {
+    expect(service.getStatuses()).toEqual([
+      { value: PayrollStatus.ACTIVE, label: 'Active' },
+      { value: PayrollStatus.INACTIVE, label: 'Inactive' },
+    ]);
+  });
 });

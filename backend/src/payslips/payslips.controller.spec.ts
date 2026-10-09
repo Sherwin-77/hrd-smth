@@ -15,6 +15,7 @@ describe('PayslipsController', () => {
     approve: ReturnType<typeof vi.fn>;
     reject: ReturnType<typeof vi.fn>;
     restore: ReturnType<typeof vi.fn>;
+    getStatuses: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(async () => {
@@ -27,6 +28,7 @@ describe('PayslipsController', () => {
       approve: vi.fn(),
       reject: vi.fn(),
       restore: vi.fn(),
+      getStatuses: vi.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -85,5 +87,12 @@ describe('PayslipsController', () => {
     expect(service.approve).toHaveBeenCalledWith(id);
     expect(service.reject).toHaveBeenCalledWith(id);
     expect(service.restore).toHaveBeenCalledWith(id);
+  });
+
+  it('getStatuses delegates to the service', () => {
+    const statuses = [{ value: 'pending', label: 'Pending' }];
+    service.getStatuses.mockReturnValue(statuses);
+    expect(controller.getStatuses()).toBe(statuses);
+    expect(service.getStatuses).toHaveBeenCalledWith();
   });
 });

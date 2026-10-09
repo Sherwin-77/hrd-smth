@@ -259,4 +259,12 @@ describe('PayslipsService', () => {
     );
     expect(payslips.recover).not.toHaveBeenCalled();
   });
+
+  it('getStatuses returns all payslip statuses with labels', () => {
+    expect(service.getStatuses()).toEqual([
+      { value: PayslipStatus.PENDING, label: 'Pending' },
+      { value: PayslipStatus.APPROVED, label: 'Approved' },
+      { value: PayslipStatus.REJECTED, label: 'Rejected' },
+    ]);
+  });
 });

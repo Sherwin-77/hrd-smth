@@ -17,8 +17,9 @@ import {
   PaginatedEmployeesWithPayrollResponseDto,
 } from './dto/paginated-employees-resource.dto.js';
 import { PaginationMetaDto } from '#common/dto/pagination.dto.js';
+import { EnumResourceDto } from '#common/dto/enum-resource.dto.js';
 import { EmployeesRepository } from './employees.repository.js';
-import { Employee } from './entities/employee.entity.js';
+import { Employee, EmployeeSex } from './entities/employee.entity.js';
 import { Brackets } from 'typeorm';
 import { v7 as uuidv7 } from 'uuid';
 
@@ -131,6 +132,10 @@ export class EmployeesService {
     }
 
     return EmployeeDetailResourceDto.fromEntity(employee);
+  }
+
+  getSexes(): EnumResourceDto[] {
+    return EnumResourceDto.fromEnum(EmployeeSex);
   }
 
   /**

@@ -15,6 +15,7 @@ describe('EmployeesController', () => {
     update: ReturnType<typeof vi.fn>;
     remove: ReturnType<typeof vi.fn>;
     restore: ReturnType<typeof vi.fn>;
+    getSexes: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(async () => {
@@ -26,6 +27,7 @@ describe('EmployeesController', () => {
       update: vi.fn(),
       remove: vi.fn(),
       restore: vi.fn(),
+      getSexes: vi.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -91,5 +93,12 @@ describe('EmployeesController', () => {
     expect(service.update).toHaveBeenCalledWith(id, { name: 'New Name' });
     expect(service.remove).toHaveBeenCalledWith(id);
     expect(service.restore).toHaveBeenCalledWith(id);
+  });
+
+  it('getSexes delegates to the service', () => {
+    const sexes = [{ value: 'male', label: 'Male' }];
+    service.getSexes.mockReturnValue(sexes);
+    expect(controller.getSexes()).toBe(sexes);
+    expect(service.getSexes).toHaveBeenCalledWith();
   });
 });
