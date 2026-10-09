@@ -1,7 +1,59 @@
 # AGENTS.md
 
 NestJS + Postgres API (`backend/`) and a Next.js frontend (`frontend/`), wired together by `docker-compose.yml`.
-The backend HR domain model is fully implemented: `employees`, `payrolls`, and `payslips` all have TypeORM-backed CRUD, plus bearer-session auth under `/auth` (see Backend).
+
+## Important Guidelines
+Follow these 4 guidelines closely.
+
+### 1. Think Before Coding
+**Don't assume. Don't hide confusion. Surface tradeoffs.**
+
+Before implementing:
+- State your assumptions explicitly. If uncertain, ask.
+- If multiple interpretations exist, present them - don't pick silently.
+- If a simpler approach exists, say so. Push back when warranted.
+- If something is unclear, stop. Name what's confusing. Ask.
+
+### 2. Simplicity First
+**Minimum code that solves the problem. Nothing speculative.**
+
+- No features beyond what was asked.
+- No abstractions for single-use code.
+- No "flexibility" or "configurability" that wasn't requested.
+- No error handling for impossible scenarios.
+- If you write 200 lines and it could be 50, rewrite it.
+  Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
+
+### 3. Surgical Changes
+**Touch only what you must. Clean up only your own mess.**
+
+When editing existing code:
+- Don't "improve" adjacent code, comments, or formatting.
+- Don't refactor things that aren't broken.
+- Match existing style, even if you'd do it differently.
+- If you notice unrelated dead code, mention it - don't delete it.
+
+When your changes create orphans:
+- Remove imports/variables/functions that YOUR changes made unused.
+- Don't remove pre-existing dead code unless asked.
+
+The test: Every changed line should trace directly to the user's request.
+
+### 4. Goal-Driven Execution
+**Define success criteria. Loop until verified.**
+
+Transform tasks into verifiable goals:
+- "Add validation" → "Write tests for invalid inputs, then make them pass"
+- "Fix the bug" → "Write a test that reproduces it, then make it pass"
+- "Refactor X" → "Ensure tests pass before and after"
+
+For multi-step tasks, state a brief plan:
+```
+1. [Step] → verify: [check]
+2. [Step] → verify: [check]
+3. [Step] → verify: [check]
+```
+Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
 ## Layout
 
@@ -14,24 +66,20 @@ The backend HR domain model is fully implemented: `employees`, `payrolls`, and `
 
 - **ESM, so relative imports must carry the `.js` extension**, even when importing a `.ts` file: `import { AppModule } from './app.module.js'`. `package.json` has `"type": "module"` and `tsconfig.json` uses `module`/`moduleResolution: nodenext`.
 - Backend path alias is `#*` → `./src/*`, wired through **both** `tsconfig.json` (`paths`) and `package.json` (`imports`). Import via `#...` with the `.js` suffix: `import { Payroll } from '#payrolls/entities/payroll.entity.js'`.
-- **Tests are Vitest, not Jest** (the README still claims the old Nest defaults). `npm test` is `vitest run` over `**/*.spec.ts`; `npm run test:e2e` uses `vitest.config.e2e.ts` over `**/*.e2e-spec.ts`. Globals are enabled, so `describe`/`it`/`expect` need no import.
-- The e2e suite imports `AppModule`, so it needs a live Postgres. Unit specs do not — the shipped specs (13 files, 107 tests) run with no DB and all pass. The base e2e (`test/app.e2e-spec.ts`, `GET /` expecting 200) currently fails even with live Postgres: `expected 200 "OK", got 401 "Unauthorized"`, because the auth guard is global (see below) and `GET /` is not `@Public()`; without a DB it fails with `ECONNREFUSED` as expected.
+- **Tests are Vitest, not Jest**. `npm test` is `vitest run` over `**/*.spec.ts`; `npm run test:e2e` uses `vitest.config.e2e.ts` over `**/*.e2e-spec.ts`. Globals are enabled, so `describe`/`it`/`expect` need no import.
+- The e2e suite imports `AppModule`, so it needs a live Postgres. Unit specs do not — the shipped specs run with no DB and all pass. The e2e without a DB fails with `ECONNREFUSED`.
 - **There is no `typecheck` script.** `npm run build` (`nest build`, `tsc` under the hood) is the typecheck. `tsconfig.build.json` excludes `test/` and `**/*spec.ts`, so a green build does not typecheck tests.
 - Lint is **oxlint with type-aware rules**, not eslint: `npm run lint` → `oxlint --type-aware src/ test/`. `.oxlintrc.json` sets `no-floating-promises: error` and turns `no-explicit-any` off.
-- Format with prettier (`singleQuote`, `trailingComma: all`). `npm run format` globs `src/**`, `test/**`, and a root-level `data-source.ts` path that no longer exists (the file moved to `src/data-source.ts`), so that trailing path matches nothing.
-- `main.ts` calls `app.enableCors()` with no origin config, so any frontend origin is allowed.
-- Auth is bearer-session based via `@nestjs/authentication`: `AuthenticationModule.forRoot({ session })` registers its guard **globally**, so every route is authenticated unless marked `@Public()` (only `POST /auth/login` is). `AuthController` offers login (email normalized + `PasswordHasher` verify, returns token/sessionId/expiresAt), logout, `me`, session list/revoke (`GET|DELETE /auth/sessions`, `DELETE /auth/sessions/:id`), and change-password. Sessions persist in `employee_sessions` through `TypeOrmSessionStore`; TTL comes from `SESSION_TTL_DAYS` (default `30d`, clamped to a positive integer, `idleTtl: 0`).
-- Domain state: `employees` is fully implemented (TypeORM-backed CRUD with soft-delete + `restore`, paginated `GET /employees` with search, unique-email guard, `password_hash` column with hasher/rehash support, `GET /employees/with-active-payroll`, uuid ids). `payrolls` has full CRUD with soft-delete + `restore`, `activate`/`deactivate` transitions, and a single-active-payroll-per-employee rule enforced in the service (pre-check plus `23505` catch — no entity-side unique decorator). `payslips` has full CRUD with soft-delete + `restore` and `approve`/`reject` transitions; updates are rejected unless `PENDING`. All three controllers sit behind `AuthenticationGuard` and validate ids with `ParseUUIDPipe` (the old `+id` coercion is gone). Statuses are const-object unions, not TS enums (`PayrollStatus`: `active`/`inactive`; `PayslipStatus`: `pending`/`approved`/`rejected`).
+- Format with prettier (`singleQuote`, `trailingComma: all`). `npm run format` globs `src/**`, `test/**`.
+- Auth is bearer-session based via `@nestjs/authentication`: `AuthenticationModule.forRoot({ session })` registers its guard **globally**, so every route is authenticated unless marked `@Public()` (only `POST /auth/login` is).
+- Controllers sit behind `AuthenticationGuard` and validate ids with `ParseUUIDPipe`. Statuses are const-object unions, not TS enums (e.g `PayrollStatus`: `active`/`inactive`; `PayslipStatus`: `pending`/`approved`/`rejected`). Use resource DTO for any response unless stated otherwise.
+- `@casl/ability` is installed but unused anywhere in `src/`; authentication is built (see above) but role/ability authorization is still unbuilt.
 
 ### Database
 
-- TypeORM CLI scripts use the ESM runner (`typeorm-ts-node-esm -d ./src/data-source.ts`), which loads the `.ts` data source correctly — the previous `typeorm-ts-node-commonjs` runner died with `ERR_UNKNOWN_FILE_EXTENSION`. `make:migration`, `migrate:up`, and `migrate:down` still need a live Postgres (they fail with `ECONNREFUSED` without one), so do not assume a schema change was applied just because the script was invoked.
+- TypeORM CLI scripts use the ESM runner (`typeorm-ts-node-esm -d ./src/data-source.ts`), which loads the `.ts` data source correctly. `make:migration`, `migrate:up`, and `migrate:down` still need a live Postgres (they fail with `ECONNREFUSED` without one), so do not assume a schema change was applied just because the script was invoked.
 - DB config is **duplicated** in two files that must stay in sync: `TypeOrmModule.forRoot(...)` in `src/app.module.ts` and the `DataSource` in `src/data-source.ts`. Env is read straight off `process.env` (`DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`), not via `ConfigService`.
-- `synchronize: false` and `migrationsRun` is never set, so the app neither auto-creates the schema nor auto-applies migrations on boot. `src/database/migrations/` holds 4 migration files (`employees`, `payrolls`, `payslips`, `employee-sessions`), and `src/data-source.ts` globs `src/database/migrations/*{.ts,.js}`. `src/scripts/make-migration.js` now generates into `src/database/migrations/${name}`.
-- Runtime entity loading is via `autoLoadEntities: true` in `src/app.module.ts` (entities registered through `TypeOrmModule.forFeature`); `src/data-source.ts` also sets `entities: ['src/**/*.entity{.ts,.js}']` for the migration CLI and seed script.
-- `dotenv` (`^18.0.5`) is a declared dependency; `src/data-source.ts` imports it via `dotenv/config`.
-- `@casl/ability` is installed but unused anywhere in `src/`; authentication is built (see above) but role/ability authorization is still unbuilt.
-- In `docker-compose.yml` the `db` service has a `pg_isready` healthcheck and `backend` waits on it (`condition: service_healthy`), so the backend no longer boots against a Postgres that is not ready yet.
+- `synchronize: false` and `migrationsRun` is never set, so the app neither auto-creates the schema nor auto-applies migrations on boot. `src/database/migrations/` and `src/data-source.ts` globs `src/database/migrations/*{.ts,.js}`.
 
 ## Frontend
 
@@ -40,7 +88,6 @@ The backend HR domain model is fully implemented: `employees`, `payrolls`, and `
 - `tsconfig.json` maps `@/*` to `./*` — project-root-relative, **not** `src/*`. There is no `src/` directory; the app router lives in `app/`.
 - Tailwind v4 via `@tailwindcss/postcss`. No theme file; utilities are used directly.
 - No test runner is configured on this side.
-- `docker-compose.yml` passes `NEXT_PUBLIC_*` variables at **runtime**, but `frontend/Dockerfile` builds first — anything prefixed `NEXT_PUBLIC_` is inlined into the client bundle at build time, so setting it in compose alone will not reach the browser. It needs a build arg or runtime config.
 - `npm run lint` is `eslint` with a flat config (`eslint-config-next` core-web-vitals + typescript). There is no separate typecheck script; `npx tsc --noEmit` passes on its own.
 
 ### Design: simple, no AI slop
@@ -68,4 +115,4 @@ Verification order that matters: `npm run build` → `npm run lint` → `npm tes
 
 ## Ports and env
 
-`db` 5432, `backend` 3001, `frontend` 3000. Docker service hostnames differ from browser-facing URLs: inside the compose network the backend is `http://backend:3001`, but the browser needs `http://localhost:3001` — hence the separate `INTERNAL_API_URL` and `NEXT_PUBLIC_API_URL` in compose. For a local non-Docker run, `backend/.env` is gitignored local config and `backend/.env.example` is its template (empty `DB_*`, filled `SEED_SUPERADMIN_*` defaults for the starter superadmin); when unset, the code falls back to `localhost:5432`, `postgres`/`secret`, database `hrd` (see `src/data-source.ts` and `src/app.module.ts`). `npm run seed` is the idempotent superadmin seed (reads `SEED_SUPERADMIN_*`). Gotcha: its `#`-imports must use the `#path` form — a `#/path` typo dies under ts-node/esm with `ERR_INVALID_MODULE_SPECIFIER`.
+`db` 5432, `backend` 3001, `frontend` 3000. Docker service hostnames differ from browser-facing URLs: inside the compose network the backend is `http://backend:3001`, but the browser needs `http://localhost:3001` — hence the separate `INTERNAL_API_URL` and `NEXT_PUBLIC_API_URL` in compose. For a local non-Docker run, `backend/.env` is gitignored local config and `backend/.env.example` is its template (empty `DB_*`, filled `SEED_SUPERADMIN_*` defaults for the starter superadmin); when unset, the code falls back to `localhost:5432`, `postgres`/`secret`, database `hrd` (see `src/data-source.ts` and `src/app.module.ts`). `npm run seed` is the idempotent superadmin seed (reads `SEED_SUPERADMIN_*`).
