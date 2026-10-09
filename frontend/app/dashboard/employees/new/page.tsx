@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import EmployeeForm, {
   type EmployeeFormValues,
-} from "@/components/employee-form";
+} from "@/components/employees/employee-form";
 import {
   clearAuthSession,
   createEmployee,

@@ -6,7 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import ContractForm, {
   toDateInput,
   type ContractFormValues,
-} from "@/components/contract-form";
+} from "@/components/contracts/contract-form";
 import {
   clearAuthSession,
   fetchContract,

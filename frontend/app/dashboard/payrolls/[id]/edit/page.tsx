@@ -6,7 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import PayrollForm, {
   toPercentInput,
   type PayrollFormValues,
-} from "@/components/payroll-form";
+} from "@/components/payrolls/payroll-form";
 import {
   clearAuthSession,
   fetchPayroll,

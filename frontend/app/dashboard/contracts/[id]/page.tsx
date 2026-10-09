@@ -14,7 +14,7 @@ import {
   type ContractSummary,
 } from "@/lib/api";
 import { enumLabel, useEnumOptions } from "@/lib/use-enum-options";
-import ActionButtons from "@/components/action-buttons";
+import ActionButtons from "@/components/shared/action-buttons";
 
 function formatDate(value: string | null): string {
   if (!value) return "-";

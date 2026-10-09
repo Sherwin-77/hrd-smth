@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { getAuthToken, type EnumOption } from "./api";
+import { getAuthToken } from "./api/auth";
+import type { EnumOption } from "./api/types";
 
 export type EnumFetchStatus = "loading" | "ready" | "error";
 

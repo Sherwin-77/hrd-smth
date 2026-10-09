@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import PayslipForm, {
   type PayslipEmployeeOption,
   type PayslipFormValues,
-} from "@/components/payslip-form";
+} from "@/components/payslips/payslip-form";
 import {
   clearAuthSession,
   createPayslip,

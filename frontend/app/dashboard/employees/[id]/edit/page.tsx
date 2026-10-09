@@ -6,7 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import EmployeeForm, {
   toDateInput,
   type EmployeeFormValues,
-} from "@/components/employee-form";
+} from "@/components/employees/employee-form";
 import {
   clearAuthSession,
   fetchEmployee,

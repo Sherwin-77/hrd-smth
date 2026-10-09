@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { SubmitEvent } from "react";
 import Link from "next/link";
-import type { EnumOption } from "@/lib/api";
+import type { EnumOption } from "@/lib/api/types";
 import type { EnumFetchStatus } from "@/lib/use-enum-options";
 
 export interface ContractEmployeeOption {

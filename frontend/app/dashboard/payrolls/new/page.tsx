@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import PayrollForm, {
   type PayrollEmployeeOption,
   type PayrollFormValues,
-} from "@/components/payroll-form";
+} from "@/components/payrolls/payroll-form";
 import {
   clearAuthSession,
   createPayroll,

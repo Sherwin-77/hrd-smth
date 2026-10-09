@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import type { ActionLink } from "@/lib/api";
+import type { ActionLink } from "@/lib/api/types";
 
 interface ActionButtonsProps {
   actions: ActionLink[];

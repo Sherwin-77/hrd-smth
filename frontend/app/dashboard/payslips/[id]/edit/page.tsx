@@ -6,7 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import PayslipForm, {
   toDateInput,
   type PayslipFormValues,
-} from "@/components/payslip-form";
+} from "@/components/payslips/payslip-form";
 import {
   clearAuthSession,
   fetchPayslip,

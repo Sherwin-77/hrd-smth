@@ -13,7 +13,7 @@ import {
   type PayslipSummary,
 } from "@/lib/api";
 import { enumLabel, useEnumOptions } from "@/lib/use-enum-options";
-import ActionButtons from "@/components/action-buttons";
+import ActionButtons from "@/components/shared/action-buttons";
 
 export default function PayslipDetailPage() {
   const params = useParams<{ id: string }>();

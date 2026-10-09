@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import ContractForm, {
   type ContractEmployeeOption,
   type ContractFormValues,
-} from "@/components/contract-form";
+} from "@/components/contracts/contract-form";
 import {
   clearAuthSession,
   createContract,

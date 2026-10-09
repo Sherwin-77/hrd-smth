@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import Sidebar from "@/components/sidebar";
+import Sidebar from "@/components/shared/sidebar";
 import {
   clearAuthSession,
   fetchCurrentEmployee,
@@ -10,7 +10,7 @@ import {
   getStoredEmployee,
   logoutRequest,
   type LoginEmployee,
-} from "@/lib/api";
+} from "@/lib/api/auth";
 import {
   loadCollapsed,
   saveCollapsed,
