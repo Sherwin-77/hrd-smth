@@ -326,6 +326,18 @@ export async function deleteEmployee(
   );
 }
 
+export async function listEmployeesWithActivePayroll(
+  token: string,
+  query: ListQuery,
+): Promise<Paginated<EmployeeDetail>> {
+  return apiFetch<Paginated<EmployeeDetail>>(
+    `/employees/with-active-payroll${toQueryString(query)}`,
+    token,
+    undefined,
+    "Could not load employees.",
+  );
+}
+
 export async function fetchPayroll(
   token: string,
   id: string,
@@ -347,6 +359,102 @@ export async function fetchPayslip(
     token,
     undefined,
     "Could not load the payslip.",
+  );
+}
+
+// Payroll and payslip DTOs map camelCase properties from snake_case keys,
+// so request bodies must use snake_case (same as employees).
+export interface CreatePayrollPayload {
+  employee_id: string;
+  account_number: string;
+  account_name: string;
+  tax_percentage: number;
+}
+
+export interface UpdatePayrollPayload {
+  account_number?: string;
+  account_name?: string;
+  tax_percentage?: number;
+}
+
+export async function createPayroll(
+  token: string,
+  payload: CreatePayrollPayload,
+): Promise<PayrollSummary> {
+  return apiFetch<PayrollSummary>(
+    "/payrolls",
+    token,
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    "Could not create the payroll.",
+  );
+}
+
+export async function updatePayroll(
+  token: string,
+  id: string,
+  payload: UpdatePayrollPayload,
+): Promise<PayrollSummary> {
+  return apiFetch<PayrollSummary>(
+    `/payrolls/${id}`,
+    token,
+    {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    },
+    "Could not update the payroll.",
+  );
+}
+
+export interface CreatePayslipPayload {
+  payroll_id: string;
+  basic_salary: number;
+  overtime?: number;
+  tax?: number;
+  bonus?: number;
+  deduction?: number;
+  date: string;
+}
+
+export interface UpdatePayslipPayload {
+  basic_salary?: number;
+  overtime?: number;
+  tax?: number;
+  bonus?: number;
+  deduction?: number;
+  date?: string;
+}
+
+export async function createPayslip(
+  token: string,
+  payload: CreatePayslipPayload,
+): Promise<PayslipSummary> {
+  return apiFetch<PayslipSummary>(
+    "/payslips",
+    token,
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    "Could not create the payslip.",
+  );
+}
+
+export async function updatePayslip(
+  token: string,
+  id: string,
+  payload: UpdatePayslipPayload,
+): Promise<PayslipSummary> {
+  return apiFetch<PayslipSummary>(
+    `/payslips/${id}`,
+    token,
+    {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    },
+    "Could not update the payslip.",
   );
 }
 

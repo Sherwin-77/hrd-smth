@@ -67,7 +67,15 @@ export default function PayslipsPage() {
   return (
     <div className="flex flex-col gap-4">
       <section className="rounded-lg border border-gray-200 bg-white p-6">
-        <h1 className="text-xl font-semibold text-gray-900">Payslips</h1>
+        <div className="flex items-center justify-between gap-4">
+          <h1 className="text-xl font-semibold text-gray-900">Payslips</h1>
+          <Link
+            href="/dashboard/payslips/new"
+            className="shrink-0 rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800"
+          >
+            Create payslip
+          </Link>
+        </div>
         <p className="mt-1 text-sm text-gray-600">
           {total} payslip{total === 1 ? "" : "s"} found.
         </p>

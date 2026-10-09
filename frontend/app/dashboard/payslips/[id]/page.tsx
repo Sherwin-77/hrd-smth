@@ -70,12 +70,21 @@ export default function PayslipDetailPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <nav aria-label="Breadcrumb">
+      <nav
+        aria-label="Breadcrumb"
+        className="flex items-center justify-between gap-4"
+      >
         <Link
           href="/dashboard/payslips"
           className="text-sm font-medium text-blue-700 hover:underline"
         >
           Back to payslips
+        </Link>
+        <Link
+          href={`/dashboard/payslips/${params.id}/edit`}
+          className="rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800"
+        >
+          Edit
         </Link>
       </nav>
       <section className="rounded-lg border border-gray-200 bg-white p-6">
