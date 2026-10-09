@@ -19,6 +19,12 @@ export const NAV_ITEMS: NavItem[] = [
     description: "Search and browse employees",
   },
   {
+    id: "contracts",
+    label: "Contracts",
+    href: "/dashboard/contracts",
+    description: "Employment contracts and status",
+  },
+  {
     id: "payrolls",
     label: "Payrolls",
     href: "/dashboard/payrolls",
