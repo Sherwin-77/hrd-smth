@@ -21,8 +21,8 @@ import {
 import { Employee } from '#employees/entities/employee.entity.js';
 import { ContractResourceDto } from './dto/contract-resource.dto.js';
 import { PaginatedContractsResponseDto } from './dto/paginated-contracts-resource.dto.js';
-import { ContractTypeDto } from './dto/contract-type.dto.js';
 import { PaginationMetaDto } from '#common/dto/pagination.dto.js';
+import { EnumResourceDto } from '#common/dto/enum-resource.dto.js';
 import { v7 as uuidv7 } from 'uuid';
 
 /** Wire `sort_by` values (snake_case) mapped to entity columns. */
@@ -127,10 +127,8 @@ export class ContractsService {
     return ContractResourceDto.fromEntity(await this.findOneOrFail(id));
   }
 
-  getTypes(): ContractTypeDto[] {
-    return Object.values(ContractType).map((value) =>
-      ContractTypeDto.fromValue(value),
-    );
+  getTypes(): EnumResourceDto[] {
+    return EnumResourceDto.fromEnum(ContractType);
   }
 
   async update(

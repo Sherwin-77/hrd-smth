@@ -19,8 +19,8 @@ import { FindContractsQueryDto } from './dto/find-contracts-query.dto.js';
 import { UpdateContractDto } from './dto/update-contract.dto.js';
 import { SignContractDto } from './dto/sign-contract.dto.js';
 import { ContractResourceDto } from './dto/contract-resource.dto.js';
-import { ContractTypeDto } from './dto/contract-type.dto.js';
 import { PaginatedContractsResponseDto } from './dto/paginated-contracts-resource.dto.js';
+import { EnumResourceDto } from '#common/dto/enum-resource.dto.js';
 
 @Controller('contracts')
 @UseGuards(AuthenticationGuard)
@@ -42,7 +42,7 @@ export class ContractsController {
   }
 
   @Get('types')
-  getTypes(): ContractTypeDto[] {
+  getTypes(): EnumResourceDto[] {
     return this.contractsService.getTypes();
   }
 
