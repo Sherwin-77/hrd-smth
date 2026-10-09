@@ -18,22 +18,15 @@ export class ActionLinkDto {
   @Expose({ name: 'label' })
   label: string;
 
-  @Expose({ name: 'requires_input' })
-  requiresInput?: string;
-
   constructor(
     id: string,
     method: 'PATCH' | 'DELETE',
     href: string,
     label: string,
-    requiresInput?: string,
   ) {
     this.id = id;
     this.method = method;
     this.href = href;
     this.label = label;
-    if (requiresInput !== undefined) {
-      this.requiresInput = requiresInput;
-    }
   }
 }

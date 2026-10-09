@@ -31,6 +31,7 @@ export default function ContractDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [actionPending, setActionPending] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [signedDate, setSignedDate] = useState("");
   const { options: statusOptions, error: statusEnumError } = useEnumOptions(
     listContractStatuses,
   );
@@ -76,7 +77,7 @@ export default function ContractDetailPage() {
     };
   }, [router, params.id]);
 
-  async function handleAction(link: ActionLink, input?: string) {
+  async function handleAction(link: ActionLink) {
     const token = getAuthToken();
     if (!token) {
       router.replace("/login");
@@ -90,12 +91,35 @@ export default function ContractDetailPage() {
         router.push("/dashboard/contracts");
         return;
       }
-      const body =
-        link.requires_input === "signed_date" && input
-          ? { signed_date: input }
-          : undefined;
+      const result = await executeAction<ContractSummary>(token, link);
+      setContract(result);
+    } catch (err: unknown) {
+      if (err instanceof Error && err.message.includes("Session expired")) {
+        clearAuthSession();
+        router.replace("/login");
+        return;
+      }
+      setActionError(
+        err instanceof Error ? err.message : "Could not complete the action.",
+      );
+    } finally {
+      setActionPending(null);
+    }
+  }
+
+  async function handleSign(link: ActionLink) {
+    const token = getAuthToken();
+    if (!token) {
+      router.replace("/login");
+      return;
+    }
+    setActionPending(link.id);
+    setActionError(null);
+    try {
+      const body = signedDate ? { signed_date: signedDate } : undefined;
       const result = await executeAction<ContractSummary>(token, link, body);
       setContract(result);
+      setSignedDate("");
     } catch (err: unknown) {
       if (err instanceof Error && err.message.includes("Session expired")) {
         clearAuthSession();
@@ -131,6 +155,12 @@ export default function ContractDetailPage() {
     );
   }
 
+  const signAction = contract?.available_actions?.find(
+    (action) => action.id === "sign" && action.method === "PATCH",
+  );
+  const otherActions =
+    contract?.available_actions?.filter((action) => action.id !== "sign") ?? [];
+
   return (
     <div className="flex flex-col gap-4">
       <nav
@@ -144,7 +174,7 @@ export default function ContractDetailPage() {
           Back to contracts
         </Link>
         <ActionButtons
-          actions={contract.available_actions ?? []}
+          actions={otherActions}
           editHref={`/dashboard/contracts/${params.id}/edit`}
           pendingId={actionPending}
           error={actionError}
@@ -160,6 +190,48 @@ export default function ContractDetailPage() {
           {enumLabel(statusOptions, contract.status)}
         </p>
       </section>
+
+      {signAction ? (
+        <section
+          aria-label="Sign contract"
+          className="rounded-lg border border-gray-200 bg-white p-6"
+        >
+          <h2 className="text-base font-semibold text-gray-900">
+            Sign contract
+          </h2>
+          <form
+            className="mt-4 flex flex-wrap items-end gap-3"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void handleSign(signAction);
+            }}
+          >
+            <label
+              htmlFor="signed-date"
+              className="block text-sm font-medium text-gray-600"
+            >
+              Signed date
+              <input
+                id="signed-date"
+                type="date"
+                value={signedDate}
+                onChange={(event) => setSignedDate(event.target.value)}
+                className="mt-1 block rounded-md border border-gray-300 px-2 py-1 text-sm text-gray-900"
+              />
+            </label>
+            <button
+              type="submit"
+              disabled={actionPending !== null}
+              className="rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 disabled:opacity-50"
+            >
+              {actionPending === signAction.id ? "Saving..." : "Sign"}
+            </button>
+          </form>
+          <p className="mt-2 text-sm text-gray-600">
+            Leave empty to use today.
+          </p>
+        </section>
+      ) : null}
 
       <section
         aria-label="Contract details"

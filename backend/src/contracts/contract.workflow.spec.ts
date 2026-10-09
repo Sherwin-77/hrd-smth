@@ -17,7 +17,6 @@ describe('getContractActions', () => {
         method: 'PATCH',
         href: `/contracts/${id}/sign`,
         label: 'Sign',
-        requiresInput: 'signed_date',
       },
       {
         id: 'decline',

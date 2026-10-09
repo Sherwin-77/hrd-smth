@@ -18,7 +18,6 @@ interface PayrollTransition {
   method: 'PATCH' | 'DELETE';
   path: (id: string) => string;
   label: string;
-  requiresInput?: string;
 }
 
 /**
@@ -94,7 +93,6 @@ export function getPayrollActions(
         transition.method,
         transition.path(id),
         transition.label,
-        transition.requiresInput,
       ),
   );
 }

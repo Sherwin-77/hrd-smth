@@ -19,15 +19,14 @@ interface ContractTransition {
   method: 'PATCH' | 'DELETE';
   path: (id: string) => string;
   label: string;
-  requiresInput?: string;
 }
 
 /**
  * Single place that defines the contract status flow.
  * Services guard through `assertContractAction` and resource DTOs
  * expose visibility through `getContractActions`, so both stay in
- * sync with no other edits. `sign` accepts an optional `signed_date`,
- * flagged via `requiresInput` so the frontend knows to prompt for it.
+ * sync with no other edits. `sign` accepts an optional `signed_date`
+ * (defaults to today); the contract page owns that input.
  */
 const CONTRACT_TRANSITIONS: ContractTransition[] = [
   {
@@ -36,7 +35,6 @@ const CONTRACT_TRANSITIONS: ContractTransition[] = [
     method: 'PATCH',
     path: (id) => `/contracts/${id}/sign`,
     label: 'Sign',
-    requiresInput: 'signed_date',
   },
   {
     id: ContractAction.DECLINE,
@@ -102,7 +100,6 @@ export function getContractActions(
         transition.method,
         transition.path(id),
         transition.label,
-        transition.requiresInput,
       ),
   );
 }

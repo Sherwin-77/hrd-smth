@@ -21,14 +21,13 @@ export interface Paginated<T> {
 // ({ label, value }). The backend is the source of truth; no
 // hardcoded enum values live on this side.
 // Action links mirror the backend ActionLinkDto wire format
-// ({ id, method, href, label, requires_input }). The backend owns
+// ({ id, method, href, label }). The backend owns
 // visibility and URLs; the frontend renders them generically.
 export interface ActionLink {
   id: string;
   method: "PATCH" | "DELETE";
   href: string;
   label: string;
-  requires_input?: string;
 }
 
 export interface EnumOption {
