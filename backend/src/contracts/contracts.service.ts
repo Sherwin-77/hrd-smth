@@ -171,13 +171,9 @@ export class ContractsService {
 
   async remove(id: string): Promise<void> {
     const contract = await this.findOneOrFail(id);
-    // Signed contracts are immutable records: they leave the system only
-    // through the employee cascade, never through a direct delete.
-    if (contract.status === ContractStatus.SIGNED) {
-      throw new ConflictException(
-        `Cannot remove contract #${contract.id} with status '${contract.status}'`,
-      );
-    }
+    // Only pending contract are allowed to be deleted, otherwise use status flow
+    this.throwIfNotPending(contract, 'delete');
+
     await this.contracts.softRemove(contract);
   }
 
