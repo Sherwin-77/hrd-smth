@@ -5,10 +5,15 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
   clearAuthSession,
+  executeAction,
   fetchPayroll,
   getAuthToken,
+  listPayrollStatuses,
+  type ActionLink,
   type PayrollSummary,
 } from "@/lib/api";
+import { enumLabel, useEnumOptions } from "@/lib/use-enum-options";
+import ActionButtons from "@/components/action-buttons";
 
 export default function PayrollDetailPage() {
   const params = useParams<{ id: string }>();
@@ -18,6 +23,18 @@ export default function PayrollDetailPage() {
     "loading",
   );
   const [error, setError] = useState<string | null>(null);
+  const [actionPending, setActionPending] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const { options: statusOptions, error: enumError } = useEnumOptions(
+    listPayrollStatuses,
+  );
+
+  useEffect(() => {
+    if (enumError && enumError.includes("Session expired")) {
+      clearAuthSession();
+      router.replace("/login");
+    }
+  }, [router, enumError]);
 
   useEffect(() => {
     const token = getAuthToken();
@@ -46,6 +63,36 @@ export default function PayrollDetailPage() {
       active = false;
     };
   }, [router, params.id]);
+
+  async function handleAction(link: ActionLink) {
+    const token = getAuthToken();
+    if (!token) {
+      router.replace("/login");
+      return;
+    }
+    setActionPending(link.id);
+    setActionError(null);
+    try {
+      if (link.method === "DELETE") {
+        await executeAction<void>(token, link);
+        router.push("/dashboard/payrolls");
+        return;
+      }
+      const result = await executeAction<PayrollSummary>(token, link);
+      setPayroll(result);
+    } catch (err: unknown) {
+      if (err instanceof Error && err.message.includes("Session expired")) {
+        clearAuthSession();
+        router.replace("/login");
+        return;
+      }
+      setActionError(
+        err instanceof Error ? err.message : "Could not complete the action.",
+      );
+    } finally {
+      setActionPending(null);
+    }
+  }
 
   if (status === "loading") {
     return <p className="text-sm text-gray-600">Loading...</p>;
@@ -80,12 +127,13 @@ export default function PayrollDetailPage() {
         >
           Back to payrolls
         </Link>
-        <Link
-          href={`/dashboard/payrolls/${params.id}/edit`}
-          className="rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800"
-        >
-          Edit
-        </Link>
+        <ActionButtons
+          actions={payroll.available_actions ?? []}
+          editHref={`/dashboard/payrolls/${params.id}/edit`}
+          pendingId={actionPending}
+          error={actionError}
+          onAction={handleAction}
+        />
       </nav>
       <section className="rounded-lg border border-gray-200 bg-white p-6">
         <h1 className="text-xl font-semibold text-gray-900">
@@ -114,7 +162,9 @@ export default function PayrollDetailPage() {
           </div>
           <div>
             <dt className="font-medium text-gray-600">Status</dt>
-            <dd className="text-gray-900">{payroll.status}</dd>
+            <dd className="text-gray-900">
+              {payroll ? enumLabel(statusOptions, payroll.status) : null}
+            </dd>
           </div>
           <div>
             <dt className="font-medium text-gray-600">Created</dt>

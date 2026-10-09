@@ -21,9 +21,10 @@ export interface PayrollSummary {
   account_number: string;
   account_name: string;
   tax_percentage: number;
-  status: "active" | "inactive";
+  status: string;
   created_at: string;
   updated_at: string;
+  available_actions: ActionLink[];
 }
 
 export interface PayslipSummary {
@@ -37,9 +38,10 @@ export interface PayslipSummary {
   deduction: number;
   total: number;
   date: string;
-  status: "pending" | "approved" | "rejected";
+  status: string;
   created_at: string;
   updated_at: string;
+  available_actions: ActionLink[];
 }
 
 export interface EmployeeDetail {
@@ -244,6 +246,58 @@ export async function listPayslips(
   );
 }
 
+// Enum options mirror the backend EnumResourceDto wire format
+// ({ label, value }). The backend is the source of truth; no
+// hardcoded enum values live on this side.
+// Action links mirror the backend ActionLinkDto wire format
+// ({ id, method, href, label, requires_input }). The backend owns
+// visibility and URLs; the frontend renders them generically.
+export interface ActionLink {
+  id: string;
+  method: "PATCH" | "DELETE";
+  href: string;
+  label: string;
+  requires_input?: string;
+}
+
+export interface EnumOption {
+  label: string;
+  value: string;
+}
+
+export async function listEmployeeSexes(
+  token: string,
+): Promise<EnumOption[]> {
+  return apiFetch<EnumOption[]>(
+    "/employees/sexes",
+    token,
+    undefined,
+    "Could not load sex options.",
+  );
+}
+
+export async function listPayrollStatuses(
+  token: string,
+): Promise<EnumOption[]> {
+  return apiFetch<EnumOption[]>(
+    "/payrolls/statuses",
+    token,
+    undefined,
+    "Could not load payroll statuses.",
+  );
+}
+
+export async function listPayslipStatuses(
+  token: string,
+): Promise<EnumOption[]> {
+  return apiFetch<EnumOption[]>(
+    "/payslips/statuses",
+    token,
+    undefined,
+    "Could not load payslip statuses.",
+  );
+}
+
 export async function fetchEmployee(
   token: string,
   id: string,
@@ -265,7 +319,7 @@ export interface CreateEmployeePayload {
   password: string;
   phone_number: string;
   address: string;
-  sex: "male" | "female";
+  sex: string;
   birth_date: string;
   join_at: string;
   leave_at?: string;
@@ -277,7 +331,7 @@ export interface UpdateEmployeePayload {
   password?: string;
   phone_number?: string;
   address?: string;
-  sex?: "male" | "female";
+  sex?: string;
   birth_date?: string;
   join_at?: string;
   leave_at?: string | null;
@@ -455,6 +509,22 @@ export async function updatePayslip(
       body: JSON.stringify(payload),
     },
     "Could not update the payslip.",
+  );
+}
+
+export async function executeAction<T>(
+  token: string,
+  link: ActionLink,
+  body?: unknown,
+): Promise<T> {
+  return apiFetch<T>(
+    link.href,
+    token,
+    {
+      method: link.method,
+      body: body === undefined ? undefined : JSON.stringify(body),
+    },
+    `Could not ${link.label.toLowerCase()}.`,
   );
 }
 

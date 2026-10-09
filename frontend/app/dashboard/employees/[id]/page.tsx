@@ -8,8 +8,10 @@ import {
   deleteEmployee,
   fetchEmployee,
   getAuthToken,
+  listPayslipStatuses,
   type EmployeeDetail,
 } from "@/lib/api";
+import { enumLabel, useEnumOptions } from "@/lib/use-enum-options";
 
 export default function EmployeeDetailPage() {
   const params = useParams<{ id: string }>();
@@ -22,6 +24,16 @@ export default function EmployeeDetailPage() {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const { options: payslipStatusOptions, error: enumError } = useEnumOptions(
+    listPayslipStatuses,
+  );
+
+  useEffect(() => {
+    if (enumError && enumError.includes("Session expired")) {
+      clearAuthSession();
+      router.replace("/login");
+    }
+  }, [router, enumError]);
 
   useEffect(() => {
     const token = getAuthToken();
@@ -260,7 +272,7 @@ export default function EmployeeDetailPage() {
               >
                 <span className="text-gray-900">
                   {new Date(payslip.date).toLocaleDateString()} -{" "}
-                  {payslip.status}
+                  {enumLabel(payslipStatusOptions, payslip.status)}
                 </span>
                 <Link
                   href={`/dashboard/payslips/${payslip.id}`}

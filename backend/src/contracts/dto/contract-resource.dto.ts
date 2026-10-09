@@ -1,9 +1,11 @@
-import { Expose } from 'class-transformer';
+import { Expose, Type } from 'class-transformer';
 import {
   Contract,
   ContractStatus,
   ContractType,
 } from '#contracts/entities/contract.entity.js';
+import { ActionLinkDto } from '#common/dto/action-link.dto.js';
+import { getContractActions } from '#contracts/contract.workflow.js';
 
 /**
  * Wire format is snake_case (via `@Expose` + global
@@ -40,6 +42,10 @@ export class ContractResourceDto {
   @Expose({ name: 'updated_at' })
   updatedAt: Date;
 
+  @Expose({ name: 'available_actions' })
+  @Type(() => ActionLinkDto)
+  availableActions: ActionLinkDto[];
+
   static fromEntity(contract: Contract): ContractResourceDto {
     const resource = new ContractResourceDto();
     resource.id = contract.id;
@@ -52,6 +58,10 @@ export class ContractResourceDto {
     resource.status = contract.status;
     resource.createdAt = contract.createdAt;
     resource.updatedAt = contract.updatedAt;
+    resource.availableActions = getContractActions(
+      contract.status,
+      contract.id,
+    );
     return resource;
   }
 }

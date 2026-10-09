@@ -3,6 +3,8 @@
 import { useState } from "react";
 import type { SubmitEvent } from "react";
 import Link from "next/link";
+import type { EnumOption } from "@/lib/api";
+import type { EnumFetchStatus } from "@/lib/use-enum-options";
 
 export interface EmployeeFormValues {
   name: string;
@@ -10,7 +12,7 @@ export interface EmployeeFormValues {
   password: string;
   phoneNumber: string;
   address: string;
-  sex: "male" | "female";
+  sex: string;
   birthDate: string;
   joinAt: string;
   leaveAt: string;
@@ -23,6 +25,10 @@ interface EmployeeFormProps {
   serverError: string | null;
   cancelHref: string;
   onSubmit: (values: EmployeeFormValues) => void;
+  sexOptions: EnumOption[] | null;
+  sexStatus: EnumFetchStatus;
+  sexError: string | null;
+  onSexRetry: () => void;
 }
 
 const inputClassName =
@@ -60,13 +66,17 @@ export default function EmployeeForm({
   serverError,
   cancelHref,
   onSubmit,
+  sexOptions,
+  sexStatus,
+  sexError,
+  onSexRetry,
 }: EmployeeFormProps) {
   const [name, setName] = useState(initial?.name ?? "");
   const [email, setEmail] = useState(initial?.email ?? "");
   const [password, setPassword] = useState("");
   const [phoneNumber, setPhoneNumber] = useState(initial?.phoneNumber ?? "");
   const [address, setAddress] = useState(initial?.address ?? "");
-  const [sex, setSex] = useState<"male" | "female">(initial?.sex ?? "male");
+  const [sex, setSex] = useState(initial?.sex ?? "");
   const [birthDate, setBirthDate] = useState(initial?.birthDate ?? "");
   const [joinAt, setJoinAt] = useState(initial?.joinAt ?? "");
   const [leaveAt, setLeaveAt] = useState(initial?.leaveAt ?? "");
@@ -81,6 +91,7 @@ export default function EmployeeForm({
       !email.trim() ||
       !phoneNumber.trim() ||
       !address.trim() ||
+      !sex ||
       !birthDate ||
       !joinAt
     ) {
@@ -202,15 +213,39 @@ export default function EmployeeForm({
         <select
           id="employee-sex"
           name="sex"
+          required
+          disabled={sexStatus !== "ready"}
           value={sex}
-          onChange={(event) =>
-            setSex(event.target.value as "male" | "female")
-          }
+          onChange={(event) => setSex(event.target.value)}
           className={inputClassName}
         >
-          <option value="male">Male</option>
-          <option value="female">Female</option>
+          {sexStatus !== "ready" ? (
+            <option value="">
+              {sexStatus === "loading" ? "Loading..." : "Could not load options"}
+            </option>
+          ) : (
+            <>
+              <option value="">Select...</option>
+              {(sexOptions ?? []).map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </>
+          )}
         </select>
+        {sexStatus === "error" ? (
+          <p role="alert" className="mt-1 text-xs text-red-700">
+            {sexError ?? "Could not load sex options."}{" "}
+            <button
+              type="button"
+              onClick={onSexRetry}
+              className="font-medium text-blue-700 hover:underline"
+            >
+              Retry
+            </button>
+          </p>
+        ) : null}
       </Field>
 
       <Field id="employee-birth-date" label="Birth date">
@@ -259,7 +294,7 @@ export default function EmployeeForm({
       <div className="flex gap-2">
         <button
           type="submit"
-          disabled={saving}
+          disabled={saving || sexStatus !== "ready"}
           className="rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 disabled:opacity-60"
         >
           {saving

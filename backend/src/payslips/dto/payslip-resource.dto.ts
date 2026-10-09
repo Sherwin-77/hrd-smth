@@ -1,5 +1,7 @@
-import { Expose } from 'class-transformer';
+import { Expose, Type } from 'class-transformer';
 import { Payslip, PayslipStatus } from '#payslips/entities/payslip.entity.js';
+import { ActionLinkDto } from '#common/dto/action-link.dto.js';
+import { getPayslipActions } from '#payslips/payslip.workflow.js';
 
 /**
  * Wire format is snake_case (via `@Expose` + global
@@ -45,6 +47,10 @@ export class PayslipResourceDto {
   @Expose({ name: 'updated_at' })
   updatedAt: Date;
 
+  @Expose({ name: 'available_actions' })
+  @Type(() => ActionLinkDto)
+  availableActions: ActionLinkDto[];
+
   static fromEntity(payslip: Payslip): PayslipResourceDto {
     const resource = new PayslipResourceDto();
     resource.id = payslip.id;
@@ -60,6 +66,7 @@ export class PayslipResourceDto {
     resource.status = payslip.status;
     resource.createdAt = payslip.createdAt;
     resource.updatedAt = payslip.updatedAt;
+    resource.availableActions = getPayslipActions(payslip.status, payslip.id);
     return resource;
   }
 }

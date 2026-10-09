@@ -8,8 +8,10 @@ import {
   clearAuthSession,
   getAuthToken,
   listPayrolls,
+  listPayrollStatuses,
   type PayrollSummary,
 } from "@/lib/api";
+import { enumLabel, useEnumOptions } from "@/lib/use-enum-options";
 
 const PAGE_SIZE = 10;
 
@@ -26,6 +28,19 @@ export default function PayrollsPage() {
     "loading",
   );
   const [error, setError] = useState<string | null>(null);
+  const {
+    options: statusOptions,
+    status: enumStatus,
+    error: enumError,
+    retry: retryEnum,
+  } = useEnumOptions(listPayrollStatuses);
+
+  useEffect(() => {
+    if (enumError && enumError.includes("Session expired")) {
+      clearAuthSession();
+      router.replace("/login");
+    }
+  }, [router, enumError]);
 
   useEffect(() => {
     const token = getAuthToken();
@@ -109,17 +124,43 @@ export default function PayrollsPage() {
           <select
             id="payroll-status"
             value={statusFilter}
+            disabled={enumStatus !== "ready"}
             onChange={(event) => {
               setStatus("loading");
               setPage(1);
               setStatusFilter(event.target.value);
             }}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-blue-700 focus:outline-none"
+            className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-blue-700 focus:outline-none disabled:opacity-60"
           >
-            <option value="">All statuses</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
+            {enumStatus !== "ready" ? (
+              <option value="">
+                {enumStatus === "loading"
+                  ? "Loading..."
+                  : "Could not load statuses"}
+              </option>
+            ) : (
+              <>
+                <option value="">All statuses</option>
+                {(statusOptions ?? []).map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </>
+            )}
           </select>
+          {enumStatus === "error" ? (
+            <p role="alert" className="text-sm text-red-700">
+              {enumError ?? "Could not load statuses."}{" "}
+              <button
+                type="button"
+                onClick={retryEnum}
+                className="font-medium text-blue-700 hover:underline"
+              >
+                Retry
+              </button>
+            </p>
+          ) : null}
           <button
             type="submit"
             className="shrink-0 rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800"
@@ -175,14 +216,8 @@ export default function PayrollsPage() {
                     {row.tax_percentage}
                   </td>
                   <td className="px-4 py-2">
-                    <span
-                      className={`inline-block rounded-md border px-2 py-0.5 text-xs font-medium ${
-                        row.status === "active"
-                          ? "border-gray-300 bg-gray-100 text-gray-900"
-                          : "border-gray-200 bg-white text-gray-600"
-                      }`}
-                    >
-                      {row.status}
+                    <span className="inline-block rounded-md border border-gray-200 bg-white px-2 py-0.5 text-xs font-medium text-gray-700">
+                      {enumLabel(statusOptions, row.status)}
                     </span>
                   </td>
                   <td className="px-4 py-2">

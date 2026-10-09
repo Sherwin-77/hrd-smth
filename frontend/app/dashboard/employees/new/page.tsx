@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import EmployeeForm, {
@@ -10,12 +10,27 @@ import {
   clearAuthSession,
   createEmployee,
   getAuthToken,
+  listEmployeeSexes,
 } from "@/lib/api";
+import { useEnumOptions } from "@/lib/use-enum-options";
 
 export default function NewEmployeePage() {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+  const {
+    options: sexOptions,
+    status: sexStatus,
+    error: sexError,
+    retry: retrySex,
+  } = useEnumOptions(listEmployeeSexes);
+
+  useEffect(() => {
+    if (sexError && sexError.includes("Session expired")) {
+      clearAuthSession();
+      router.replace("/login");
+    }
+  }, [router, sexError]);
 
   async function handleSubmit(values: EmployeeFormValues) {
     const token = getAuthToken();
@@ -79,6 +94,10 @@ export default function NewEmployeePage() {
           serverError={serverError}
           cancelHref="/dashboard/employees"
           onSubmit={handleSubmit}
+          sexOptions={sexOptions}
+          sexStatus={sexStatus}
+          sexError={sexError}
+          onSexRetry={retrySex}
         />
       </section>
     </div>

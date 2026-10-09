@@ -1,5 +1,7 @@
-import { Expose } from 'class-transformer';
+import { Expose, Type } from 'class-transformer';
 import { Payroll, PayrollStatus } from '#payrolls/entities/payroll.entity.js';
+import { ActionLinkDto } from '#common/dto/action-link.dto.js';
+import { getPayrollActions } from '#payrolls/payroll.workflow.js';
 
 /**
  * Wire format is snake_case (via `@Expose` + global
@@ -30,6 +32,10 @@ export class PayrollResourceDto {
   @Expose({ name: 'updated_at' })
   updatedAt: Date;
 
+  @Expose({ name: 'available_actions' })
+  @Type(() => ActionLinkDto)
+  availableActions: ActionLinkDto[];
+
   static fromEntity(payroll: Payroll): PayrollResourceDto {
     const resource = new PayrollResourceDto();
     resource.id = payroll.id;
@@ -40,6 +46,7 @@ export class PayrollResourceDto {
     resource.status = payroll.status;
     resource.createdAt = payroll.createdAt;
     resource.updatedAt = payroll.updatedAt;
+    resource.availableActions = getPayrollActions(payroll.status, payroll.id);
     return resource;
   }
 }

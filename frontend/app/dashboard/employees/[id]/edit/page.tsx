@@ -11,8 +11,10 @@ import {
   clearAuthSession,
   fetchEmployee,
   getAuthToken,
+  listEmployeeSexes,
   updateEmployee,
 } from "@/lib/api";
+import { useEnumOptions } from "@/lib/use-enum-options";
 
 export default function EditEmployeePage() {
   const params = useParams<{ id: string }>();
@@ -24,6 +26,12 @@ export default function EditEmployeePage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+  const {
+    options: sexOptions,
+    status: sexStatus,
+    error: sexError,
+    retry: retrySex,
+  } = useEnumOptions(listEmployeeSexes);
 
   useEffect(() => {
     const token = getAuthToken();
@@ -41,7 +49,7 @@ export default function EditEmployeePage() {
           password: "",
           phoneNumber: detail.phone_number,
           address: detail.address,
-          sex: detail.sex === "female" ? "female" : "male",
+          sex: detail.sex,
           birthDate: toDateInput(detail.birth_date),
           joinAt: toDateInput(detail.join_at),
           leaveAt: toDateInput(detail.leave_at),
@@ -62,6 +70,13 @@ export default function EditEmployeePage() {
       active = false;
     };
   }, [router, params.id]);
+
+  useEffect(() => {
+    if (sexError && sexError.includes("Session expired")) {
+      clearAuthSession();
+      router.replace("/login");
+    }
+  }, [router, sexError]);
 
   async function handleSubmit(values: EmployeeFormValues) {
     const token = getAuthToken();
@@ -145,6 +160,10 @@ export default function EditEmployeePage() {
           serverError={serverError}
           cancelHref={`/dashboard/employees/${params.id}`}
           onSubmit={handleSubmit}
+          sexOptions={sexOptions}
+          sexStatus={sexStatus}
+          sexError={sexError}
+          onSexRetry={retrySex}
         />
       </section>
     </div>
