@@ -9,8 +9,7 @@ export const PayslipAction = {
   DELETE: 'delete',
 } as const;
 
-export type PayslipAction =
-  (typeof PayslipAction)[keyof typeof PayslipAction];
+export type PayslipAction = (typeof PayslipAction)[keyof typeof PayslipAction];
 
 interface PayslipTransition {
   id: PayslipAction;
@@ -24,9 +23,7 @@ interface PayslipTransition {
  * Single place that defines the payslip status flow.
  * Services guard through `assertPayslipAction` and resource DTOs
  * expose visibility through `getPayslipActions`, so both stay in
- * sync with no other edits. Delete stays available from every place
- * (current `remove()` has no status guard); tightening it to
- * pending-only is a separate change.
+ * sync with no other edits.
  */
 const PAYSLIP_TRANSITIONS: PayslipTransition[] = [
   {

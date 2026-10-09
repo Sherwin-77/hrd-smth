@@ -219,6 +219,17 @@ describe('PayslipsService', () => {
     expect(payslips.softRemove).toHaveBeenCalledWith(payslip);
   });
 
+  it('remove rejects approved payslips', async () => {
+    payslips.findOneBy.mockResolvedValue({
+      ...payslipData,
+      status: PayslipStatus.APPROVED,
+    });
+    await expect(service.remove(payslip.id)).rejects.toBeInstanceOf(
+      ConflictException,
+    );
+    expect(payslips.softRemove).not.toHaveBeenCalled();
+  });
+
   it('remove throws NotFoundException for unknown ids', async () => {
     payslips.findOneBy.mockResolvedValue(null);
     await expect(service.remove('missing')).rejects.toBeInstanceOf(

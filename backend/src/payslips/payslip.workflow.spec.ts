@@ -35,16 +35,9 @@ describe('getPayslipActions', () => {
   });
 
   it.each([PayslipStatus.APPROVED, PayslipStatus.REJECTED])(
-    'exposes only delete for a %s payslip',
+    'exposes nothing for a %s payslip',
     (status) => {
-      expect(getPayslipActions(status, id)).toEqual([
-        {
-          id: 'delete',
-          method: 'DELETE',
-          href: `/payslips/${id}`,
-          label: 'Delete',
-        },
-      ]);
+      expect(getPayslipActions(status, id)).toEqual([]);
     },
   );
 
@@ -54,17 +47,20 @@ describe('getPayslipActions', () => {
     expect(canPayslipAction(PayslipStatus.PENDING, PayslipAction.APPROVE)).toBe(
       true,
     );
-    expect(canPayslipAction(PayslipStatus.APPROVED, PayslipAction.APPROVE)).toBe(
-      false,
-    );
+    expect(
+      canPayslipAction(PayslipStatus.APPROVED, PayslipAction.APPROVE),
+    ).toBe(false);
     expect(() =>
       assertPayslipAction(pending, PayslipAction.UPDATE),
     ).not.toThrow();
+    expect(() => assertPayslipAction(approved, PayslipAction.UPDATE)).toThrow(
+      ConflictException,
+    );
     expect(() =>
-      assertPayslipAction(approved, PayslipAction.UPDATE),
-    ).toThrow(ConflictException);
-    expect(() =>
-      assertPayslipAction(approved, PayslipAction.DELETE),
+      assertPayslipAction(pending, PayslipAction.DELETE),
     ).not.toThrow();
+    expect(() => assertPayslipAction(approved, PayslipAction.DELETE)).toThrow(
+      ConflictException,
+    );
   });
 });

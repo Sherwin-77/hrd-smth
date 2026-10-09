@@ -24,7 +24,12 @@ describe('getContractActions', () => {
         href: `/contracts/${id}/decline`,
         label: 'Decline',
       },
-      { id: 'update', method: 'PATCH', href: `/contracts/${id}`, label: 'Edit' },
+      {
+        id: 'update',
+        method: 'PATCH',
+        href: `/contracts/${id}`,
+        label: 'Edit',
+      },
       {
         id: 'delete',
         method: 'DELETE',
@@ -64,11 +69,11 @@ describe('getContractActions', () => {
     expect(() =>
       assertContractAction(pending, ContractAction.SIGN),
     ).not.toThrow();
-    expect(() =>
-      assertContractAction(pending, ContractAction.VOID),
-    ).toThrow(ConflictException);
-    expect(() =>
-      assertContractAction(signed, ContractAction.DELETE),
-    ).toThrow(ConflictException);
+    expect(() => assertContractAction(pending, ContractAction.VOID)).toThrow(
+      ConflictException,
+    );
+    expect(() => assertContractAction(signed, ContractAction.DELETE)).toThrow(
+      ConflictException,
+    );
   });
 });

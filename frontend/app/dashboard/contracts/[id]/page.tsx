@@ -32,12 +32,10 @@ export default function ContractDetailPage() {
   const [actionPending, setActionPending] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [signedDate, setSignedDate] = useState("");
-  const { options: statusOptions, error: statusEnumError } = useEnumOptions(
-    listContractStatuses,
-  );
-  const { options: typeOptions, error: typeEnumError } = useEnumOptions(
-    listContractTypes,
-  );
+  const { options: statusOptions, error: statusEnumError } =
+    useEnumOptions(listContractStatuses);
+  const { options: typeOptions, error: typeEnumError } =
+    useEnumOptions(listContractTypes);
 
   useEffect(() => {
     for (const enumError of [statusEnumError, typeEnumError]) {
@@ -257,9 +255,7 @@ export default function ContractDetailPage() {
           </div>
           <div>
             <dt className="font-medium text-gray-600">Start date</dt>
-            <dd className="text-gray-900">
-              {formatDate(contract.start_date)}
-            </dd>
+            <dd className="text-gray-900">{formatDate(contract.start_date)}</dd>
           </div>
           <div>
             <dt className="font-medium text-gray-600">End date</dt>

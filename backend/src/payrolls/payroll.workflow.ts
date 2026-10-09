@@ -9,8 +9,7 @@ export const PayrollAction = {
   DELETE: 'delete',
 } as const;
 
-export type PayrollAction =
-  (typeof PayrollAction)[keyof typeof PayrollAction];
+export type PayrollAction = (typeof PayrollAction)[keyof typeof PayrollAction];
 
 interface PayrollTransition {
   id: PayrollAction;

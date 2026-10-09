@@ -177,12 +177,21 @@ describe('PayrollsService', () => {
   });
 
   it('remove soft-deletes only the payroll, leaving payslips intact', async () => {
-    payrolls.findOneBy.mockResolvedValue(payroll);
-    payrolls.softRemove.mockResolvedValue(payroll);
+    const inactive = { ...payrollData, status: PayrollStatus.INACTIVE };
+    payrolls.findOneBy.mockResolvedValue(inactive);
+    payrolls.softRemove.mockResolvedValue(inactive);
     await expect(service.remove(payroll.id)).resolves.toBeUndefined();
     expect(payrolls.findOneBy).toHaveBeenCalledWith({ id: payroll.id });
     expect(payrolls.findOne).not.toHaveBeenCalled();
-    expect(payrolls.softRemove).toHaveBeenCalledWith(payroll);
+    expect(payrolls.softRemove).toHaveBeenCalledWith(inactive);
+  });
+
+  it('remove rejects active payrolls', async () => {
+    payrolls.findOneBy.mockResolvedValue(payroll);
+    await expect(service.remove(payroll.id)).rejects.toBeInstanceOf(
+      ConflictException,
+    );
+    expect(payrolls.softRemove).not.toHaveBeenCalled();
   });
 
   it('remove throws NotFoundException for unknown ids', async () => {
