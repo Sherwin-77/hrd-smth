@@ -11,7 +11,11 @@ import {
   PayslipSortField,
 } from './dto/find-payslips-query.dto.js';
 import { UpdatePayslipDto } from './dto/update-payslip.dto.js';
-import { Payslip, PayslipStatus, calculatePayslipTotal } from './entities/payslip.entity.js';
+import {
+  Payslip,
+  PayslipStatus,
+  calculatePayslipTotal,
+} from './entities/payslip.entity.js';
 import { Payroll } from '#payrolls/entities/payroll.entity.js';
 import { PayslipResourceDto } from './dto/payslip-resource.dto.js';
 import { PaginatedPayslipsResponseDto } from './dto/paginated-payslips-resource.dto.js';

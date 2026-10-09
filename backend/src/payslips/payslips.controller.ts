@@ -26,7 +26,9 @@ export class PayslipsController {
   constructor(private readonly payslipsService: PayslipsService) {}
 
   @Post()
-  create(@Body() createPayslipDto: CreatePayslipDto): Promise<PayslipResourceDto> {
+  create(
+    @Body() createPayslipDto: CreatePayslipDto,
+  ): Promise<PayslipResourceDto> {
     return this.payslipsService.create(createPayslipDto);
   }
 

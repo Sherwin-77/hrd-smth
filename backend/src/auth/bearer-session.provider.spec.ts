@@ -6,14 +6,13 @@ describe('BearerSessionProvider', () => {
   const employee = { id: 'employee-id' };
   const session = { id: 'session-id', userId: 'employee-id' };
 
-  function providerWith(opts: {
-    session?: unknown;
-    employee?: unknown;
-  }) {
+  function providerWith(opts: { session?: unknown; employee?: unknown }) {
     const employees = {
       findOneBy: vi
         .fn()
-        .mockResolvedValue(opts.employee !== undefined ? opts.employee : employee),
+        .mockResolvedValue(
+          opts.employee !== undefined ? opts.employee : employee,
+        ),
     };
     const sessions = {
       validate: vi
@@ -69,9 +68,7 @@ describe('BearerSessionProvider', () => {
 
   it('authenticates a valid Bearer token', async () => {
     const { provider } = providerWith({});
-    const result = await provider.authenticate(
-      contextWith('Bearer raw-token'),
-    );
+    const result = await provider.authenticate(contextWith('Bearer raw-token'));
     expect(result?.user).toBe(employee);
     expect(result?.session).toBe(session);
   });

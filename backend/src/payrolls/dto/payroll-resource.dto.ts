@@ -1,8 +1,5 @@
 import { Expose } from 'class-transformer';
-import {
-  Payroll,
-  PayrollStatus,
-} from '#payrolls/entities/payroll.entity.js';
+import { Payroll, PayrollStatus } from '#payrolls/entities/payroll.entity.js';
 
 /**
  * Wire format is snake_case (via `@Expose` + global

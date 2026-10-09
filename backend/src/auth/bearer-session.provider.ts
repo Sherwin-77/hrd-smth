@@ -1,7 +1,4 @@
-import {
-  type ExecutionContext,
-  Injectable,
-} from '@nestjs/common';
+import { type ExecutionContext, Injectable } from '@nestjs/common';
 import {
   AuthenticationError,
   AuthenticationProvider,

@@ -1,57 +1,67 @@
-import { Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryColumn, type Relation, UpdateDateColumn } from "typeorm";
-import { Employee } from "#employees/entities/employee.entity.js";
-import { Payslip } from "#payslips/entities/payslip.entity.js";
+import {
+  Column,
+  CreateDateColumn,
+  DeleteDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  PrimaryColumn,
+  type Relation,
+  UpdateDateColumn,
+} from 'typeorm';
+import { Employee } from '#employees/entities/employee.entity.js';
+import { Payslip } from '#payslips/entities/payslip.entity.js';
 
 export const PayrollStatus = {
-    ACTIVE: 'active',
-    INACTIVE: 'inactive',
+  ACTIVE: 'active',
+  INACTIVE: 'inactive',
 } as const;
 
 export type PayrollStatus = (typeof PayrollStatus)[keyof typeof PayrollStatus];
 
-@Entity("payrolls")
+@Entity('payrolls')
 export class Payroll {
-    @PrimaryColumn('uuid')
-    id: string;
+  @PrimaryColumn('uuid')
+  id: string;
 
-    @Column({name: 'employee_id', type: 'uuid'})
-    employeeId: string;
+  @Column({ name: 'employee_id', type: 'uuid' })
+  employeeId: string;
 
-    @Column({name: 'account_number'})
-    accountNumber: string;
+  @Column({ name: 'account_number' })
+  accountNumber: string;
 
-    @Column({name: 'account_name'})
-    accountName: string;
+  @Column({ name: 'account_name' })
+  accountName: string;
 
-    @Column({
-        name: 'tax_percentage',
-        type: 'decimal',
-        'precision': 5,
-        'scale': 4,
-    })
-    taxPercentage: number = 0.0000;
+  @Column({
+    name: 'tax_percentage',
+    type: 'decimal',
+    precision: 5,
+    scale: 4,
+  })
+  taxPercentage: number = 0.0;
 
-    @Column({
-        name: 'status',
-        type: 'enum',
-        enum: PayrollStatus,
-    })
-    status: PayrollStatus = PayrollStatus.ACTIVE;
+  @Column({
+    name: 'status',
+    type: 'enum',
+    enum: PayrollStatus,
+  })
+  status: PayrollStatus = PayrollStatus.ACTIVE;
 
-    @CreateDateColumn({name: 'created_at'})
-    createdAt: Date;
-    
-    @UpdateDateColumn({name: 'updated_at'})
-    updatedAt: Date;
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
 
-    @DeleteDateColumn({name: 'deleted_at'})
-    deletedAt: Date | null;
-    
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
 
-    @ManyToOne(() => Employee, (employee) => employee.payrolls)
-    @JoinColumn({name: 'employee_id'})
-    employee: Relation<Employee>;
+  @DeleteDateColumn({ name: 'deleted_at' })
+  deletedAt: Date | null;
 
-    @OneToMany(() => Payslip, (payslip) => payslip.payroll)
-    payslips: Relation<Payslip>[]
+  @ManyToOne(() => Employee, (employee) => employee.payrolls)
+  @JoinColumn({ name: 'employee_id' })
+  employee: Relation<Employee>;
+
+  @OneToMany(() => Payslip, (payslip) => payslip.payroll)
+  payslips: Relation<Payslip>[];
 }

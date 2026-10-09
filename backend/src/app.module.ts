@@ -12,8 +12,7 @@ import { ContractsModule } from './contracts/contracts.module.js';
 
 function sessionAbsoluteTtl(): `${number}d` {
   const days = Number(process.env.SESSION_TTL_DAYS ?? '30');
-  const safeDays =
-    Number.isFinite(days) && days > 0 ? Math.floor(days) : 30;
+  const safeDays = Number.isFinite(days) && days > 0 ? Math.floor(days) : 30;
   return `${safeDays}d`;
 }
 

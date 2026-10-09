@@ -1,9 +1,8 @@
-import { MigrationInterface, QueryRunner } from "typeorm";
+import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class CreateContractsTable1791434809727 implements MigrationInterface {
-
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
             CREATE TABLE "contracts" (
                 "id" UUID NOT NULL DEFAULT UUIDV7(),
                 "employee_id" UUID NOT NULL,
@@ -22,12 +21,11 @@ export class CreateContractsTable1791434809727 implements MigrationInterface {
             );
 
         `);
-    }
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
             DROP TABLE "contracts";
-        `)
-    }
-
+        `);
+  }
 }

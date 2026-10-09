@@ -26,7 +26,9 @@ export class PayrollsController {
   constructor(private readonly payrollsService: PayrollsService) {}
 
   @Post()
-  create(@Body() createPayrollDto: CreatePayrollDto): Promise<PayrollResourceDto> {
+  create(
+    @Body() createPayrollDto: CreatePayrollDto,
+  ): Promise<PayrollResourceDto> {
     return this.payrollsService.create(createPayrollDto);
   }
 
@@ -62,12 +64,16 @@ export class PayrollsController {
   }
 
   @Patch(':id/activate')
-  activate(@Param('id', ParseUUIDPipe) id: string): Promise<PayrollResourceDto> {
+  activate(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<PayrollResourceDto> {
     return this.payrollsService.activate(id);
   }
 
   @Patch(':id/deactivate')
-  deactivate(@Param('id', ParseUUIDPipe) id: string): Promise<PayrollResourceDto> {
+  deactivate(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<PayrollResourceDto> {
     return this.payrollsService.deactivate(id);
   }
 }
