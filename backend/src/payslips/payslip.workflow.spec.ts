@@ -1,5 +1,11 @@
-import { PayslipStatus } from './entities/payslip.entity.js';
-import { getPayslipActions } from './payslip.workflow.js';
+import { ConflictException } from '@nestjs/common';
+import { Payslip, PayslipStatus } from './entities/payslip.entity.js';
+import {
+  assertPayslipAction,
+  canPayslipAction,
+  getPayslipActions,
+  PayslipAction,
+} from './payslip.workflow.js';
 
 describe('getPayslipActions', () => {
   const id = '0193e5e0-9f6a-7a1b-9c2d-4e5f6a7b8c9e';
@@ -41,4 +47,24 @@ describe('getPayslipActions', () => {
       ]);
     },
   );
+
+  it('guards match visibility: allowed actions pass, others throw', () => {
+    const pending = { id, status: PayslipStatus.PENDING } as Payslip;
+    const approved = { id, status: PayslipStatus.APPROVED } as Payslip;
+    expect(canPayslipAction(PayslipStatus.PENDING, PayslipAction.APPROVE)).toBe(
+      true,
+    );
+    expect(canPayslipAction(PayslipStatus.APPROVED, PayslipAction.APPROVE)).toBe(
+      false,
+    );
+    expect(() =>
+      assertPayslipAction(pending, PayslipAction.UPDATE),
+    ).not.toThrow();
+    expect(() =>
+      assertPayslipAction(approved, PayslipAction.UPDATE),
+    ).toThrow(ConflictException);
+    expect(() =>
+      assertPayslipAction(approved, PayslipAction.DELETE),
+    ).not.toThrow();
+  });
 });

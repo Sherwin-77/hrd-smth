@@ -17,6 +17,7 @@ import { PayrollResourceDto } from './dto/payroll-resource.dto.js';
 import { PaginatedPayrollsResponseDto } from './dto/paginated-payrolls-resource.dto.js';
 import { PaginationMetaDto } from '#common/dto/pagination.dto.js';
 import { EnumResourceDto } from '#common/dto/enum-resource.dto.js';
+import { assertPayrollAction, PayrollAction } from './payroll.workflow.js';
 import { v7 as uuidv7 } from 'uuid';
 
 export interface PaginatedPayrolls {
@@ -141,6 +142,7 @@ export class PayrollsService {
     updatePayrollDto: UpdatePayrollDto,
   ): Promise<PayrollResourceDto> {
     const payroll = await this.findOneOrFail(id);
+    assertPayrollAction(payroll, PayrollAction.UPDATE);
     const merged = this.payrolls.merge(payroll, {
       ...(updatePayrollDto.accountNumber !== undefined
         ? { accountNumber: updatePayrollDto.accountNumber }
@@ -157,6 +159,7 @@ export class PayrollsService {
 
   async remove(id: string): Promise<void> {
     const payroll = await this.findOneOrFail(id);
+    assertPayrollAction(payroll, PayrollAction.DELETE);
     // Soft-deletes only the payroll. Payslips survive and stay linked
     // to the employee via `payslip.employeeId` until the employee itself
     // is soft-deleted (cascade lives on `Employee.payslips`).
@@ -182,6 +185,7 @@ export class PayrollsService {
     if (payroll.status === PayrollStatus.ACTIVE) {
       return PayrollResourceDto.fromEntity(payroll);
     }
+    assertPayrollAction(payroll, PayrollAction.ACTIVATE);
     await this.validateNoActivePayroll(payroll.employeeId, payroll.id);
     payroll.status = PayrollStatus.ACTIVE;
     try {
@@ -197,6 +201,7 @@ export class PayrollsService {
     if (payroll.status === PayrollStatus.INACTIVE) {
       return PayrollResourceDto.fromEntity(payroll);
     }
+    assertPayrollAction(payroll, PayrollAction.DEACTIVATE);
     payroll.status = PayrollStatus.INACTIVE;
     return PayrollResourceDto.fromEntity(await this.payrolls.save(payroll));
   }

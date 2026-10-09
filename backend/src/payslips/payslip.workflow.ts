@@ -1,42 +1,100 @@
+import { ConflictException } from '@nestjs/common';
 import { ActionLinkDto } from '#common/dto/action-link.dto.js';
-import { PayslipStatus } from './entities/payslip.entity.js';
+import { Payslip, PayslipStatus } from './entities/payslip.entity.js';
+
+export const PayslipAction = {
+  APPROVE: 'approve',
+  REJECT: 'reject',
+  UPDATE: 'update',
+  DELETE: 'delete',
+} as const;
+
+export type PayslipAction =
+  (typeof PayslipAction)[keyof typeof PayslipAction];
+
+interface PayslipTransition {
+  id: PayslipAction;
+  from: PayslipStatus[];
+  method: 'PATCH' | 'DELETE';
+  path: (id: string) => string;
+  label: string;
+  requiresInput?: string;
+}
 
 /**
  * Single place that defines the payslip status flow.
- * Mirrors current service behavior (no guard changes): approve /
- * reject / update are pending-only, while delete stays available
- * from every place (current `remove()` has no status guard).
- * Tightening delete to pending-only is a separate change.
+ * Services guard through `assertPayslipAction` and resource DTOs
+ * expose visibility through `getPayslipActions`, so both stay in
+ * sync with no other edits. Delete stays available from every place
+ * (current `remove()` has no status guard); tightening it to
+ * pending-only is a separate change.
  */
-export const PayslipWorkflow = {
-  places: [
-    PayslipStatus.PENDING,
-    PayslipStatus.APPROVED,
-    PayslipStatus.REJECTED,
-  ],
-} as const;
+const PAYSLIP_TRANSITIONS: PayslipTransition[] = [
+  {
+    id: PayslipAction.APPROVE,
+    from: [PayslipStatus.PENDING],
+    method: 'PATCH',
+    path: (id) => `/payslips/${id}/approve`,
+    label: 'Approve',
+  },
+  {
+    id: PayslipAction.REJECT,
+    from: [PayslipStatus.PENDING],
+    method: 'PATCH',
+    path: (id) => `/payslips/${id}/reject`,
+    label: 'Reject',
+  },
+  {
+    id: PayslipAction.UPDATE,
+    from: [PayslipStatus.PENDING],
+    method: 'PATCH',
+    path: (id) => `/payslips/${id}`,
+    label: 'Edit',
+  },
+  {
+    id: PayslipAction.DELETE,
+    from: [PayslipStatus.PENDING],
+    method: 'DELETE',
+    path: (id) => `/payslips/${id}`,
+    label: 'Delete',
+  },
+];
+
+export function canPayslipAction(
+  status: PayslipStatus,
+  action: PayslipAction,
+): boolean {
+  return PAYSLIP_TRANSITIONS.some(
+    (transition) =>
+      transition.id === action && transition.from.includes(status),
+  );
+}
+
+export function assertPayslipAction(
+  payslip: Payslip,
+  action: PayslipAction,
+): void {
+  if (!canPayslipAction(payslip.status, action)) {
+    throw new ConflictException(
+      `Cannot ${action} payslip #${payslip.id} with status '${payslip.status}'`,
+    );
+  }
+}
 
 export function getPayslipActions(
   status: PayslipStatus,
   id: string,
 ): ActionLinkDto[] {
-  switch (status) {
-    case PayslipStatus.PENDING:
-      return [
-        new ActionLinkDto(
-          'approve',
-          'PATCH',
-          `/payslips/${id}/approve`,
-          'Approve',
-        ),
-        new ActionLinkDto('reject', 'PATCH', `/payslips/${id}/reject`, 'Reject'),
-        new ActionLinkDto('update', 'PATCH', `/payslips/${id}`, 'Edit'),
-        new ActionLinkDto('delete', 'DELETE', `/payslips/${id}`, 'Delete'),
-      ];
-    case PayslipStatus.APPROVED:
-    case PayslipStatus.REJECTED:
-      return [new ActionLinkDto('delete', 'DELETE', `/payslips/${id}`, 'Delete')];
-    default:
-      return [];
-  }
+  return PAYSLIP_TRANSITIONS.filter((transition) =>
+    transition.from.includes(status),
+  ).map(
+    (transition) =>
+      new ActionLinkDto(
+        transition.id,
+        transition.method,
+        transition.path(id),
+        transition.label,
+        transition.requiresInput,
+      ),
+  );
 }

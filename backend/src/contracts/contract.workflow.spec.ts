@@ -1,5 +1,11 @@
-import { ContractStatus } from './entities/contract.entity.js';
-import { getContractActions } from './contract.workflow.js';
+import { ConflictException } from '@nestjs/common';
+import { Contract, ContractStatus } from './entities/contract.entity.js';
+import {
+  assertContractAction,
+  canContractAction,
+  ContractAction,
+  getContractActions,
+} from './contract.workflow.js';
 
 describe('getContractActions', () => {
   const id = '0193e5e0-9f6a-7a1b-9c2d-4e5f6a7b8c9e';
@@ -46,4 +52,24 @@ describe('getContractActions', () => {
       expect(getContractActions(status, id)).toEqual([]);
     },
   );
+
+  it('guards match visibility: allowed actions pass, others throw', () => {
+    const pending = { id, status: ContractStatus.PENDING } as Contract;
+    const signed = { id, status: ContractStatus.SIGNED } as Contract;
+    expect(canContractAction(ContractStatus.SIGNED, ContractAction.VOID)).toBe(
+      true,
+    );
+    expect(canContractAction(ContractStatus.PENDING, ContractAction.VOID)).toBe(
+      false,
+    );
+    expect(() =>
+      assertContractAction(pending, ContractAction.SIGN),
+    ).not.toThrow();
+    expect(() =>
+      assertContractAction(pending, ContractAction.VOID),
+    ).toThrow(ConflictException);
+    expect(() =>
+      assertContractAction(signed, ContractAction.DELETE),
+    ).toThrow(ConflictException);
+  });
 });

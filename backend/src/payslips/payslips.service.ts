@@ -1,5 +1,4 @@
 import {
-  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -21,6 +20,7 @@ import { PayslipResourceDto } from './dto/payslip-resource.dto.js';
 import { PaginatedPayslipsResponseDto } from './dto/paginated-payslips-resource.dto.js';
 import { PaginationMetaDto } from '#common/dto/pagination.dto.js';
 import { EnumResourceDto } from '#common/dto/enum-resource.dto.js';
+import { assertPayslipAction, PayslipAction } from './payslip.workflow.js';
 import { v7 as uuidv7 } from 'uuid';
 
 export interface PaginatedPayslips {
@@ -142,7 +142,7 @@ export class PayslipsService {
     updatePayslipDto: UpdatePayslipDto,
   ): Promise<PayslipResourceDto> {
     const payslip = await this.findOneOrFail(id);
-    this.throwIfNotPending(payslip, 'update');
+    assertPayslipAction(payslip, PayslipAction.UPDATE);
 
     const merged = this.payslips.merge(payslip, {
       ...(updatePayslipDto.basicSalary !== undefined
@@ -176,6 +176,7 @@ export class PayslipsService {
 
   async remove(id: string): Promise<void> {
     const payslip = await this.findOneOrFail(id);
+    assertPayslipAction(payslip, PayslipAction.DELETE);
     await this.payslips.softRemove(payslip);
   }
 
@@ -198,7 +199,7 @@ export class PayslipsService {
     if (payslip.status === PayslipStatus.APPROVED) {
       return PayslipResourceDto.fromEntity(payslip);
     }
-    this.throwIfNotPending(payslip, 'approve');
+    assertPayslipAction(payslip, PayslipAction.APPROVE);
     payslip.status = PayslipStatus.APPROVED;
     return PayslipResourceDto.fromEntity(await this.payslips.save(payslip));
   }
@@ -208,7 +209,7 @@ export class PayslipsService {
     if (payslip.status === PayslipStatus.REJECTED) {
       return PayslipResourceDto.fromEntity(payslip);
     }
-    this.throwIfNotPending(payslip, 'reject');
+    assertPayslipAction(payslip, PayslipAction.REJECT);
     payslip.status = PayslipStatus.REJECTED;
     return PayslipResourceDto.fromEntity(await this.payslips.save(payslip));
   }
@@ -219,13 +220,5 @@ export class PayslipsService {
       throw new NotFoundException(`Payslip #${id} not found`);
     }
     return payslip;
-  }
-
-  private throwIfNotPending(payslip: Payslip, action: string): void {
-    if (payslip.status !== PayslipStatus.PENDING) {
-      throw new ConflictException(
-        `Cannot ${action} payslip #${payslip.id} with status '${payslip.status}'`,
-      );
-    }
   }
 }

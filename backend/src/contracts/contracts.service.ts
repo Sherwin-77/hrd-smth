@@ -23,6 +23,7 @@ import { ContractResourceDto } from './dto/contract-resource.dto.js';
 import { PaginatedContractsResponseDto } from './dto/paginated-contracts-resource.dto.js';
 import { PaginationMetaDto } from '#common/dto/pagination.dto.js';
 import { EnumResourceDto } from '#common/dto/enum-resource.dto.js';
+import { assertContractAction, ContractAction } from './contract.workflow.js';
 import { v7 as uuidv7 } from 'uuid';
 
 /** Wire `sort_by` values (snake_case) mapped to entity columns. */
@@ -140,7 +141,7 @@ export class ContractsService {
     updateContractDto: UpdateContractDto,
   ): Promise<ContractResourceDto> {
     const contract = await this.findOneOrFail(id);
-    this.throwIfNotPending(contract, 'update');
+    assertContractAction(contract, ContractAction.UPDATE);
 
     const startDate =
       updateContractDto.startDate !== undefined
@@ -174,7 +175,7 @@ export class ContractsService {
   async remove(id: string): Promise<void> {
     const contract = await this.findOneOrFail(id);
     // Only pending contract are allowed to be deleted, otherwise use status flow
-    this.throwIfNotPending(contract, 'delete');
+    assertContractAction(contract, ContractAction.DELETE);
 
     await this.contracts.softRemove(contract);
   }
@@ -209,7 +210,7 @@ export class ContractsService {
     if (contract.status === ContractStatus.SIGNED) {
       return ContractResourceDto.fromEntity(contract);
     }
-    this.throwIfNotPending(contract, 'sign');
+    assertContractAction(contract, ContractAction.SIGN);
     contract.status = ContractStatus.SIGNED;
     contract.signedDate = signContractDto.signedDate
       ? new Date(signContractDto.signedDate)
@@ -222,7 +223,7 @@ export class ContractsService {
     if (contract.status === ContractStatus.DECLINED) {
       return ContractResourceDto.fromEntity(contract);
     }
-    this.throwIfNotPending(contract, 'decline');
+    assertContractAction(contract, ContractAction.DECLINE);
     contract.status = ContractStatus.DECLINED;
     return ContractResourceDto.fromEntity(await this.contracts.save(contract));
   }
@@ -232,11 +233,7 @@ export class ContractsService {
     if (contract.status === ContractStatus.VOIDED) {
       return ContractResourceDto.fromEntity(contract);
     }
-    if (contract.status !== ContractStatus.SIGNED) {
-      throw new ConflictException(
-        `Cannot void contract #${contract.id} with status '${contract.status}'`,
-      );
-    }
+    assertContractAction(contract, ContractAction.VOID);
     contract.status = ContractStatus.VOIDED;
     return ContractResourceDto.fromEntity(await this.contracts.save(contract));
   }
@@ -247,14 +244,6 @@ export class ContractsService {
       throw new NotFoundException(`Contract #${id} not found`);
     }
     return contract;
-  }
-
-  private throwIfNotPending(contract: Contract, action: string): void {
-    if (contract.status !== ContractStatus.PENDING) {
-      throw new ConflictException(
-        `Cannot ${action} contract #${contract.id} with status '${contract.status}'`,
-      );
-    }
   }
 
   private throwIfEndDateBeforeStart(
