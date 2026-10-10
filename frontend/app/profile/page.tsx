@@ -11,7 +11,7 @@ import {
   type EmployeeDetail,
 } from "@/lib/api";
 
-export default function AccountPage() {
+export default function ProfilePage() {
   const router = useRouter();
   const [detail, setDetail] = useState<EmployeeDetail | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">(
@@ -81,7 +81,7 @@ export default function AccountPage() {
   return (
     <div className="flex flex-col gap-4">
       <section className="rounded-lg border border-gray-200 bg-white p-6">
-        <h1 className="text-xl font-semibold text-gray-900">Account</h1>
+        <h1 className="text-xl font-semibold text-gray-900">Profile</h1>
         <p className="mt-1 text-sm text-gray-600">
           Your profile details and password.
         </p>

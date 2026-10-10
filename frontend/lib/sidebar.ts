@@ -10,7 +10,7 @@ export const NAV_ITEMS: NavItem[] = [
     id: "overview",
     label: "Overview",
     href: "/dashboard",
-    description: "Your profile and payroll summary",
+    description: "Totals and pending approvals",
   },
   {
     id: "employees",
@@ -35,18 +35,6 @@ export const NAV_ITEMS: NavItem[] = [
     label: "Payslips",
     href: "/dashboard/payslips",
     description: "Salary slips by period",
-  },
-  {
-    id: "sessions",
-    label: "Sessions",
-    href: "/dashboard/sessions",
-    description: "Devices signed in to your account",
-  },
-  {
-    id: "account",
-    label: "Account",
-    href: "/dashboard/account",
-    description: "Profile details and password",
   },
 ];
 

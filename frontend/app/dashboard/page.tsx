@@ -5,23 +5,26 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   clearAuthSession,
-  fetchCurrentEmployeeDetail,
   getAuthToken,
+  listContracts,
   listEmployees,
+  listPayrolls,
   listPayslips,
-  type EmployeeDetail,
 } from "@/lib/api";
 
 interface OverviewStats {
   employeeTotal: number | null;
+  payrollTotal: number | null;
+  contractTotal: number | null;
   pendingPayslips: number | null;
 }
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [detail, setDetail] = useState<EmployeeDetail | null>(null);
   const [stats, setStats] = useState<OverviewStats>({
     employeeTotal: null,
+    payrollTotal: null,
+    contractTotal: null,
     pendingPayslips: null,
   });
   const [status, setStatus] = useState<"loading" | "ready" | "error">(
@@ -36,14 +39,16 @@ export default function DashboardPage() {
       return;
     }
     Promise.all([
-      fetchCurrentEmployeeDetail(token),
       listEmployees(token, { page: 1, limit: 1 }),
+      listPayrolls(token, { page: 1, limit: 1, status: "active" }),
+      listContracts(token, { page: 1, limit: 1, status: "pending" }),
       listPayslips(token, { page: 1, limit: 1, status: "pending" }),
     ])
-      .then(([profile, employees, pending]) => {
-        setDetail(profile);
+      .then(([employees, payrolls, contracts, pending]) => {
         setStats({
           employeeTotal: employees.meta.total,
+          payrollTotal: payrolls.meta.total,
+          contractTotal: contracts.meta.total,
           pendingPayslips: pending.meta.total,
         });
         setStatus("ready");
@@ -74,40 +79,35 @@ export default function DashboardPage() {
     );
   }
 
-  const payslipCount = detail?.payslips.length ?? 0;
-  const activePayroll = detail?.active_payroll ?? null;
-
   const cards = [
     {
       label: "Employees",
       value: stats.employeeTotal === null ? "-" : String(stats.employeeTotal),
       hint: "Total employee records",
       href: "/dashboard/employees",
-      linkText: "Browse employees",
+      linkText: "Browse all employees",
     },
     {
-      label: "Active payroll",
-      value: activePayroll ? activePayroll.account_name : "None",
-      hint: activePayroll
-        ? `Account ${activePayroll.account_number}`
-        : "No active payroll on your profile",
+      label: "Payrolls",
+      value: stats.payrollTotal === null ? "-" : String(stats.payrollTotal),
+      hint: "Active payrolls",
       href: "/dashboard/payrolls",
-      linkText: "View payrolls",
+      linkText: "Browse all payrolls",
     },
     {
-      label: "Your payslips",
-      value: String(payslipCount),
-      hint: "Payslips linked to your profile",
-      href: "/dashboard/payslips",
-      linkText: "View payslips",
+      label: "Pending Contracts",
+      value: stats.contractTotal === null ? "-" : String(stats.contractTotal),
+      hint: "Pending sign",
+      href: "/dashboard/contracts",
+      linkText: "Browse all contracts",
     },
     {
-      label: "Pending payslips",
+      label: "Payslips",
       value:
         stats.pendingPayslips === null ? "-" : String(stats.pendingPayslips),
       hint: "Awaiting approval",
       href: "/dashboard/payslips",
-      linkText: "Review pending",
+      linkText: "Browse all payslips",
     },
   ];
 
@@ -115,9 +115,7 @@ export default function DashboardPage() {
     <div className="flex flex-col gap-6">
       <section className="rounded-lg border border-gray-200 bg-white p-6">
         <h1 className="text-xl font-semibold text-gray-900">Overview</h1>
-        <p className="mt-1 text-sm text-gray-600">
-          Signed in as {detail?.name ?? "Employee"} ({detail?.email ?? ""}).
-        </p>
+        <p className="mt-1 text-sm text-gray-600">Totals across all records.</p>
       </section>
 
       <section aria-label="Summary" className="grid gap-4 sm:grid-cols-2">
@@ -139,39 +137,6 @@ export default function DashboardPage() {
             </Link>
           </div>
         ))}
-      </section>
-
-      <section
-        aria-label="Profile summary"
-        className="rounded-lg border border-gray-200 bg-white p-6"
-      >
-        <h2 className="text-base font-semibold text-gray-900">Your profile</h2>
-        <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
-          <div>
-            <dt className="font-medium text-gray-600">Name</dt>
-            <dd className="text-gray-900">{detail?.name ?? "-"}</dd>
-          </div>
-          <div>
-            <dt className="font-medium text-gray-600">Email</dt>
-            <dd className="text-gray-900">{detail?.email ?? "-"}</dd>
-          </div>
-          <div>
-            <dt className="font-medium text-gray-600">Phone</dt>
-            <dd className="text-gray-900">{detail?.phone_number ?? "-"}</dd>
-          </div>
-          <div>
-            <dt className="font-medium text-gray-600">Joined</dt>
-            <dd className="text-gray-900">
-              {detail ? new Date(detail.join_at).toLocaleDateString() : "-"}
-            </dd>
-          </div>
-        </dl>
-        <Link
-          href="/dashboard/account"
-          className="mt-4 inline-block text-sm font-medium text-blue-700 hover:underline"
-        >
-          Manage account
-        </Link>
       </section>
     </div>
   );
