@@ -87,6 +87,38 @@ export async function createPayslip(
   );
 }
 
+export interface SimulatePayslipPayload {
+  basic_salary: number;
+  overtime?: number;
+  tax?: number;
+  bonus?: number;
+  deduction?: number;
+}
+
+export interface PayslipSimulation {
+  basic_salary: number;
+  overtime: number;
+  tax: number;
+  bonus: number;
+  deduction: number;
+  total: number;
+}
+
+export async function simulatePayslip(
+  token: string,
+  payload: SimulatePayslipPayload,
+): Promise<PayslipSimulation> {
+  return apiFetch<PayslipSimulation>(
+    "/payslips/simulate",
+    token,
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    "Could not simulate the payslip.",
+  );
+}
+
 export async function updatePayslip(
   token: string,
   id: string,

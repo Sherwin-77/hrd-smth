@@ -8,6 +8,7 @@ describe('PayslipsController', () => {
   let controller: PayslipsController;
   let service: {
     create: ReturnType<typeof vi.fn>;
+    simulate: ReturnType<typeof vi.fn>;
     findAll: ReturnType<typeof vi.fn>;
     findOne: ReturnType<typeof vi.fn>;
     update: ReturnType<typeof vi.fn>;
@@ -21,6 +22,7 @@ describe('PayslipsController', () => {
   beforeEach(async () => {
     service = {
       create: vi.fn(),
+      simulate: vi.fn(),
       findAll: vi.fn(),
       findOne: vi.fn(),
       update: vi.fn(),
@@ -57,6 +59,21 @@ describe('PayslipsController', () => {
       basicSalary: dto.basicSalary,
     });
     expect(service.create).toHaveBeenCalledWith(dto);
+  });
+
+  it('simulate delegates to the service', () => {
+    const dto = { basicSalary: 5000, overtime: 100 };
+    const result = {
+      basicSalary: 5000,
+      overtime: 100,
+      tax: 0,
+      bonus: 0,
+      deduction: 0,
+      total: 5100,
+    };
+    service.simulate.mockReturnValue(result);
+    expect(controller.simulate(dto)).toBe(result);
+    expect(service.simulate).toHaveBeenCalledWith(dto);
   });
 
   it('findAll forwards the query object', async () => {

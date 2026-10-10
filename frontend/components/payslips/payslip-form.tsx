@@ -1,8 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { SubmitEvent } from "react";
 import Link from "next/link";
+import {
+  getAuthToken,
+  simulatePayslip,
+  type SimulatePayslipPayload,
+} from "@/lib/api";
 
 export interface PayslipEmployeeOption {
   employeeId: string;
@@ -107,6 +112,68 @@ export default function PayslipForm({
   const [deduction, setDeduction] = useState(toAmount(initial?.deduction));
   const [date, setDate] = useState(initial?.date ?? "");
   const [formError, setFormError] = useState<string | null>(null);
+  const [preview, setPreview] = useState<
+    | { status: "idle" }
+    | { status: "calculating" }
+    | { status: "ready"; total: number }
+    | { status: "error"; message: string }
+  >({ status: "idle" });
+
+  const simulationPayload = useMemo<SimulatePayslipPayload | null>(() => {
+    const basic = basicSalary.trim() === "" ? NaN : Number(basicSalary);
+    const overtimeValue =
+      overtime.trim() === "" ? undefined : Number(overtime);
+    const taxValue = tax.trim() === "" ? undefined : Number(tax);
+    const bonusValue = bonus.trim() === "" ? undefined : Number(bonus);
+    const deductionValue =
+      deduction.trim() === "" ? undefined : Number(deduction);
+    const optionals = [overtimeValue, taxValue, bonusValue, deductionValue];
+    const valid =
+      basicSalary.trim() !== "" &&
+      !Number.isNaN(basic) &&
+      basic >= 0 &&
+      optionals.every(
+        (value) =>
+          value === undefined || (!Number.isNaN(value) && value >= 0),
+      );
+    if (!valid) return null;
+    return {
+      basic_salary: basic,
+      ...(overtimeValue !== undefined ? { overtime: overtimeValue } : {}),
+      ...(taxValue !== undefined ? { tax: taxValue } : {}),
+      ...(bonusValue !== undefined ? { bonus: bonusValue } : {}),
+      ...(deductionValue !== undefined ? { deduction: deductionValue } : {}),
+    };
+  }, [basicSalary, overtime, tax, bonus, deduction]);
+
+  useEffect(() => {
+    if (!simulationPayload) return;
+    let active = true;
+    const timer = setTimeout(() => {
+      const token = getAuthToken();
+      if (!token || !active) return;
+      setPreview({ status: "calculating" });
+      simulatePayslip(token, simulationPayload)
+        .then((result) => {
+          if (!active) return;
+          setPreview({ status: "ready", total: result.total });
+        })
+        .catch((err: unknown) => {
+          if (!active) return;
+          setPreview({
+            status: "error",
+            message:
+              err instanceof Error
+                ? err.message
+                : "Could not simulate the payslip.",
+          });
+        });
+    }, 500);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [simulationPayload]);
 
   const selected =
     mode === "create"
@@ -297,6 +364,23 @@ export default function PayslipForm({
           className={inputClassName}
         />
       </Field>
+
+      <div
+        aria-live="polite"
+        className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700"
+      >
+        {simulationPayload === null ? (
+          <p>Enter a basic salary to preview the total.</p>
+        ) : preview.status === "ready" ? (
+          <p>Estimated total: {preview.total.toFixed(2)}</p>
+        ) : preview.status === "error" ? (
+          <p role="alert" className="text-red-700">
+            {preview.message}
+          </p>
+        ) : (
+          <p>Calculating...</p>
+        )}
+      </div>
 
       <Field id="payslip-date" label="Date">
         <input

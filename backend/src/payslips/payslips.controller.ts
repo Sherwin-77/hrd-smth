@@ -18,6 +18,8 @@ import { CreatePayslipDto } from './dto/create-payslip.dto.js';
 import { FindPayslipsQueryDto } from './dto/find-payslips-query.dto.js';
 import { UpdatePayslipDto } from './dto/update-payslip.dto.js';
 import { PayslipResourceDto } from './dto/payslip-resource.dto.js';
+import { PayslipSimulationResourceDto } from './dto/payslip-simulation-resource.dto.js';
+import { SimulatePayslipDto } from './dto/simulate-payslip.dto.js';
 import { PaginatedPayslipsResponseDto } from './dto/paginated-payslips-resource.dto.js';
 import { EnumResourceDto } from '#common/dto/enum-resource.dto.js';
 
@@ -31,6 +33,14 @@ export class PayslipsController {
     @Body() createPayslipDto: CreatePayslipDto,
   ): Promise<PayslipResourceDto> {
     return this.payslipsService.create(createPayslipDto);
+  }
+
+  @Post('simulate')
+  @HttpCode(HttpStatus.OK)
+  simulate(
+    @Body() simulatePayslipDto: SimulatePayslipDto,
+  ): PayslipSimulationResourceDto {
+    return this.payslipsService.simulate(simulatePayslipDto);
   }
 
   @Get()

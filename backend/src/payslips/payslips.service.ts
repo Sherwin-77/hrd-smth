@@ -17,6 +17,8 @@ import {
 } from './entities/payslip.entity.js';
 import { Payroll } from '#payrolls/entities/payroll.entity.js';
 import { PayslipResourceDto } from './dto/payslip-resource.dto.js';
+import { PayslipSimulationResourceDto } from './dto/payslip-simulation-resource.dto.js';
+import { SimulatePayslipDto } from './dto/simulate-payslip.dto.js';
 import { PaginatedPayslipsResponseDto } from './dto/paginated-payslips-resource.dto.js';
 import { PaginationMetaDto } from '#common/dto/pagination.dto.js';
 import { EnumResourceDto } from '#common/dto/enum-resource.dto.js';
@@ -135,6 +137,12 @@ export class PayslipsService {
 
   getStatuses(): EnumResourceDto[] {
     return EnumResourceDto.fromEnum(PayslipStatus);
+  }
+
+  simulate(
+    simulatePayslipDto: SimulatePayslipDto,
+  ): PayslipSimulationResourceDto {
+    return PayslipSimulationResourceDto.fromAmounts(simulatePayslipDto);
   }
 
   async update(

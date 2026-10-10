@@ -278,4 +278,42 @@ describe('PayslipsService', () => {
       { value: PayslipStatus.REJECTED, label: 'Rejected' },
     ]);
   });
+
+  it('simulate computes the total without touching the database', () => {
+    const result = service.simulate({
+      basicSalary: 5000,
+      overtime: 100,
+      tax: 250,
+      bonus: 0,
+      deduction: 0,
+    });
+    expect(result).toEqual({
+      basicSalary: 5000,
+      overtime: 100,
+      tax: 250,
+      bonus: 0,
+      deduction: 0,
+      total: 4850,
+    });
+    expect(payslips.create).not.toHaveBeenCalled();
+    expect(payslips.save).not.toHaveBeenCalled();
+    expect(payrolls.findOneBy).not.toHaveBeenCalled();
+  });
+
+  it('simulate defaults missing amounts to zero', () => {
+    expect(service.simulate({ basicSalary: 5000 })).toEqual({
+      basicSalary: 5000,
+      overtime: 0,
+      tax: 0,
+      bonus: 0,
+      deduction: 0,
+      total: 5000,
+    });
+  });
+
+  it('simulate rounds the total to two decimals', () => {
+    expect(
+      service.simulate({ basicSalary: 1000.555, overtime: 0.005 }).total,
+    ).toBe(1000.56);
+  });
 });
