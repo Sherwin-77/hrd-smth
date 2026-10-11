@@ -19,8 +19,20 @@ export class CreateContractsTable1791434809727 implements MigrationInterface {
                 CONSTRAINT "contracts_pkey" PRIMARY KEY ("id"),
                 CONSTRAINT "contracts_employee_id_fkey" FOREIGN KEY ("employee_id") REFERENCES employees("id")
             );
-
         `);
+
+      await queryRunner.query(`
+          CREATE INDEX "contracts_employee_id_index" ON "contracts" ("employee_id");
+      `);
+
+      await queryRunner.query(`
+          CREATE INDEX "contracts_start_date_index" ON "contracts" ("start_date");
+      `);
+
+      await queryRunner.query(`
+          CREATE INDEX "contracts_end_date_index" ON "contracts" ("end_date");
+      `);
+
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {

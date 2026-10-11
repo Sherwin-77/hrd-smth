@@ -22,6 +22,10 @@ export class CreateEmployeesTable1790858867584 implements MigrationInterface {
                 CONSTRAINT "employees_email_unique" UNIQUE ("email")
             );
         `);
+
+    await queryRunner.query(`
+        CREATE INDEX "employees_name_index" ON "employees"("name");
+    `)
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {

@@ -32,6 +32,10 @@ export class CreatePayslipsTable1790860425100 implements MigrationInterface {
     await queryRunner.query(`
             CREATE INDEX "payslips_payroll_id_index" ON payslips("payroll_id");
         `);
+
+    await queryRunner.query(`
+        CREATE INDEX "payslips_date_index" ON payslips("date");
+    `)
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
