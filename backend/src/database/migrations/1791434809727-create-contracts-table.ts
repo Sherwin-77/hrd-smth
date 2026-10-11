@@ -12,8 +12,8 @@ export class CreateContractsTable1791434809727 implements MigrationInterface {
                 "signed_date" DATE,
                 "title" VARCHAR(255) NOT NULL,
                 "status" VARCHAR(255) NOT NULL,
-                "created_at" TIMESTAMPTZ(6),
-                "updated_at" TIMESTAMPTZ(6),
+                "created_at" TIMESTAMPTZ(6) NOT NULL DEFAULT now(),
+                "updated_at" TIMESTAMPTZ(6) NOT NULL DEFAULT now(),
                 "deleted_at" TIMESTAMPTZ(6),
 
                 CONSTRAINT "contracts_pkey" PRIMARY KEY ("id"),

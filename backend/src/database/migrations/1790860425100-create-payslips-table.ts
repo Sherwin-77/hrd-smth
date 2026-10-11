@@ -15,8 +15,8 @@ export class CreatePayslipsTable1790860425100 implements MigrationInterface {
                 "total" DECIMAL(16, 2) NOT NULL,
                 "date" DATE NOT NULL,
                 "status" VARCHAR(255) NOT NULL,
-                "created_at" TIMESTAMPTZ(6),
-                "updated_at" TIMESTAMPTZ(6),
+                "created_at" TIMESTAMPTZ(6) NOT NULL DEFAULT now(),
+                "updated_at" TIMESTAMPTZ(6) NOT NULL DEFAULT now(),
                 "deleted_at" TIMESTAMPTZ(6),
 
                 CONSTRAINT "payslips_pkey" PRIMARY KEY ("id"),

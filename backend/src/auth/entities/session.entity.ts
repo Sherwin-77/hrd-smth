@@ -37,10 +37,10 @@ export class EmployeeSession {
   @Column({ name: 'ip_address', type: 'varchar', length: 64, nullable: true })
   ipAddress: string | null;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'last_used_at' })
+  @UpdateDateColumn({ name: 'last_used_at', type: 'timestamptz' })
   lastUsedAt: Date;
 
   @Column({ name: 'expires_at', type: 'timestamp with time zone' })

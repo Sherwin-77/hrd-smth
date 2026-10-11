@@ -54,10 +54,10 @@ export class Employee {
   @Column({ name: 'leave_at', type: 'timestamp with time zone' })
   leaveAt: Date | null;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
   updatedAt: Date;
 
   @DeleteDateColumn({ name: 'deleted_at' })

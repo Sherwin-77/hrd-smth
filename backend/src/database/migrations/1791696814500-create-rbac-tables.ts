@@ -7,8 +7,8 @@ export class CreateRbacTables1791696814500 implements MigrationInterface {
             "id" UUID NOT NULL DEFAULT UUIDV7(),
             "name" VARCHAR(255) NOT NULL UNIQUE,
             "is_system" BOOLEAN NOT NULL DEFAULT false,
-            "created_at" TIMESTAMPTZ(6),
-            "updated_at" TIMESTAMPTZ(6),
+            "created_at" TIMESTAMPTZ(6) NOT NULL DEFAULT now(),
+            "updated_at" TIMESTAMPTZ(6) NOT NULL DEFAULT now(),
 
             CONSTRAINT "roles_pkey" PRIMARY KEY ("id"),
             CONSTRAINT "roles_name_unique" UNIQUE ("name")
@@ -20,7 +20,7 @@ export class CreateRbacTables1791696814500 implements MigrationInterface {
             "name" VARCHAR(255) NOT NULL UNIQUE,
             "group" VARCHAR(255) NOT NULL,
             "action" VARCHAR(255) NOT NULL,
-            "created_at" TIMESTAMPTZ(6),
+            "created_at" TIMESTAMPTZ(6) NOT NULL DEFAULT now(),
 
             CONSTRAINT "permissions_pkey" PRIMARY KEY ("id"),
             CONSTRAINT "permissions_name_unique" UNIQUE ("name")

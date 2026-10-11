@@ -9,8 +9,8 @@ export class CreateEmployeeSessionsTable1791019518938 implements MigrationInterf
                 "token_hash" VARCHAR(255) NOT NULL,
                 "user_agent" VARCHAR(500),
                 "ip_address" VARCHAR(64),
-                "created_at" TIMESTAMPTZ(6),
-                "last_used_at" TIMESTAMPTZ(6),
+                "created_at" TIMESTAMPTZ(6) NOT NULL DEFAULT now(),
+                "last_used_at" TIMESTAMPTZ(6) NOT NULL DEFAULT now(),
                 "expires_at" TIMESTAMPTZ NOT NULL,
                 "revoked_at" TIMESTAMPTZ,
 

@@ -14,8 +14,8 @@ export class CreateEmployeesTable1790858867584 implements MigrationInterface {
                 "birth_date" DATE NOT NULL,
                 "join_at" TIMESTAMPTZ NOT NULL,
                 "leave_at" TIMESTAMPTZ,
-                "created_at" TIMESTAMPTZ(6),
-                "updated_at" TIMESTAMPTZ(6),
+                "created_at" TIMESTAMPTZ(6) NOT NULL DEFAULT now(),
+                "updated_at" TIMESTAMPTZ(6) NOT NULL DEFAULT now(),
                 "deleted_at" TIMESTAMPTZ(6),
 
                 CONSTRAINT "employees_pkey" PRIMARY KEY ("id"),
