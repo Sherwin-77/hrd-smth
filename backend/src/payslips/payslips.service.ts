@@ -93,7 +93,7 @@ export class PayslipsService {
   ): Promise<PaginatedPayslipsResponseDto> {
     const page = query.page ?? 1;
     const limit = query.limit ?? 10;
-    const sortBy = PAYSLIP_SORT_COLUMNS[query.sortBy ?? 'created_at'];
+    const sortBy = PAYSLIP_SORT_COLUMNS[query.sortBy ?? 'date'];
     const order = query.order ?? 'DESC';
     const search = query.search?.trim();
 

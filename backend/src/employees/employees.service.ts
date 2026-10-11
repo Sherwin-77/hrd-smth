@@ -92,7 +92,7 @@ export class EmployeesService {
   ): Promise<PaginatedEmployeesResponseDto> {
     const page = query.page ?? 1;
     const limit = query.limit ?? 10;
-    const sortBy = EMPLOYEE_SORT_COLUMNS[query.sortBy ?? 'created_at'];
+    const sortBy = EMPLOYEE_SORT_COLUMNS[query.sortBy ?? 'name'];
     const order = query.order ?? 'DESC';
 
     const search = query.search?.trim();
@@ -150,7 +150,7 @@ export class EmployeesService {
   ): Promise<PaginatedEmployeesWithPayrollResponseDto> {
     const page = query.page ?? 1;
     const limit = query.limit ?? 10;
-    const sortBy = EMPLOYEE_SORT_COLUMNS[query.sortBy ?? 'created_at'];
+    const sortBy = EMPLOYEE_SORT_COLUMNS[query.sortBy ?? 'name'];
     const order = query.order ?? 'DESC';
 
     const search = query.search?.trim();

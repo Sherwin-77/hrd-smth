@@ -88,7 +88,7 @@ export class ContractsService {
   ): Promise<PaginatedContractsResponseDto> {
     const page = query.page ?? 1;
     const limit = query.limit ?? 10;
-    const sortBy = CONTRACT_SORT_COLUMNS[query.sortBy ?? 'created_at'];
+    const sortBy = CONTRACT_SORT_COLUMNS[query.sortBy ?? 'title'];
     const order = query.order ?? 'DESC';
     const search = query.search?.trim();
 

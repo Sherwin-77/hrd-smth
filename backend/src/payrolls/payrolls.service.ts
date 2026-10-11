@@ -85,7 +85,7 @@ export class PayrollsService {
   ): Promise<PaginatedPayrollsResponseDto> {
     const page = query.page ?? 1;
     const limit = query.limit ?? 10;
-    const sortBy = PAYROLL_SORT_COLUMNS[query.sortBy ?? 'created_at'];
+    const sortBy = PAYROLL_SORT_COLUMNS[query.sortBy ?? 'account_name'];
     const order = query.order ?? 'DESC';
     const search = query.search?.trim();
 
