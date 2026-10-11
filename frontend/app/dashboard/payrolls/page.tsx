@@ -256,7 +256,7 @@ export default function PayrollsPage() {
                     {row.account_number}
                   </td>
                   <td className="px-4 py-2 text-gray-700">
-                    {row.tax_percentage}
+                    {row.tax_percentage * 100}%
                   </td>
                   <td className="px-4 py-2">
                     <span className="inline-block rounded-md border border-gray-200 bg-white px-2 py-0.5 text-xs font-medium text-gray-700">

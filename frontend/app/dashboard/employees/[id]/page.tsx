@@ -333,7 +333,7 @@ export default function EmployeeDetailPage() {
             <div>
               <dt className="font-medium text-gray-600">Tax percentage</dt>
               <dd className="text-gray-900">
-                {detail.active_payroll.tax_percentage}
+                {detail.active_payroll.tax_percentage * 100}%
               </dd>
             </div>
           </dl>
