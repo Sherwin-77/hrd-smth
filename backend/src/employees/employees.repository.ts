@@ -34,12 +34,14 @@ export class EmployeesRepository extends Repository<Employee> {
 
   /**
    * Full detail query for the employee show endpoint: active payroll plus
-   * the employee's payslips (survive payroll deletion, linked directly
-   * via `payslip.employeeId`).
+   * the employee's payslips and contracts. Soft-deleted rows are excluded.
    */
   findOneDetail(id: string): Promise<Employee | null> {
     return this.createQueryBuilderWithActivePayroll('employee')
+      .leftJoinAndSelect('employee.contracts', 'contract')
       .leftJoinAndSelect('employee.payslips', 'payslip')
+      .addOrderBy('payslip.date', 'DESC')
+      .addOrderBy('contract.endDate', 'DESC', 'NULLS FIRST')
       .where('employee.id = :id', { id })
       .getOne();
   }

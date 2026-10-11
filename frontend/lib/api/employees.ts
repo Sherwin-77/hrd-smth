@@ -1,5 +1,6 @@
 import { apiFetch, toQueryString } from "./client";
 import type { EnumOption, ListQuery, Paginated } from "./types";
+import type { ContractSummary } from "./contracts";
 import type { PayrollSummary } from "./payrolls";
 import type { PayslipSummary } from "./payslips";
 
@@ -16,6 +17,7 @@ export interface EmployeeDetail {
   created_at: string;
   updated_at: string;
   active_payroll: PayrollSummary | null;
+  contracts: ContractSummary[];
   payslips: PayslipSummary[];
   /** Populated only on `GET /auth/me`; absent on employee endpoints. */
   permissions?: string[];

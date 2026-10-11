@@ -175,12 +175,14 @@ describe('EmployeesService', () => {
     mockFindOneResult({
       ...employeeData,
       activePayroll: null,
+      contracts: [],
       payslips: [],
     } as Employee);
     await expect(service.findOne(employee.id)).resolves.toMatchObject({
       id: employee.id,
       email: employee.email,
       activePayroll: null,
+      contracts: [],
       payslips: [],
     });
     expect(repository.findOneDetail).toHaveBeenCalledWith(employee.id);
@@ -190,6 +192,7 @@ describe('EmployeesService', () => {
     mockFindOneResult({
       ...employeeData,
       activePayroll,
+      contracts: [],
       payslips: [],
     } as Employee);
     await expect(service.findOne(employee.id)).resolves.toMatchObject({
@@ -222,6 +225,7 @@ describe('EmployeesService', () => {
     mockFindOneResult({
       ...employeeData,
       activePayroll,
+      contracts: [],
       payslips: [payslip],
     } as unknown as Employee);
     await expect(service.findOne(employee.id)).resolves.toMatchObject({
@@ -230,9 +234,41 @@ describe('EmployeesService', () => {
     });
   });
 
+  it('findOne embeds the employee contracts', async () => {
+    const contract = {
+      id: '0193e5e0-9f6a-7a1b-9c2d-4e5f6a7b8ca0',
+      employeeId: employee.id,
+      type: 'permanent',
+      title: 'Permanent Contract',
+      startDate: new Date('2024-01-01'),
+      endDate: null,
+      signedDate: null,
+      status: 'pending',
+      createdAt: new Date('2024-01-01'),
+      updatedAt: new Date('2024-01-01'),
+    };
+    mockFindOneResult({
+      ...employeeData,
+      activePayroll,
+      contracts: [contract],
+      payslips: [],
+    } as unknown as Employee);
+    await expect(service.findOne(employee.id)).resolves.toMatchObject({
+      id: employee.id,
+      contracts: [{ id: contract.id, employeeId: employee.id }],
+    });
+  });
+
   it('findAllWithActivePayroll returns a paginated envelope with payrolls mapped', async () => {
     const qb = mockPayrollQueryBuilderResult(
-      [{ ...employeeData, activePayroll, payslips: [] } as Employee],
+      [
+        {
+          ...employeeData,
+          activePayroll,
+          contracts: [],
+          payslips: [],
+        } as Employee,
+      ],
       1,
     );
     await expect(
@@ -253,7 +289,12 @@ describe('EmployeesService', () => {
   });
 
   it('findAllWithActivePayroll maps one resource per employee', async () => {
-    const row = { ...employeeData, activePayroll, payslips: [] } as Employee;
+    const row = {
+      ...employeeData,
+      activePayroll,
+      contracts: [],
+      payslips: [],
+    } as Employee;
     mockPayrollQueryBuilderResult([row, row], 2);
     const result = await service.findAllWithActivePayroll({
       page: 1,

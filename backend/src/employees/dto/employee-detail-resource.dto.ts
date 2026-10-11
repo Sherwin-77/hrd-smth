@@ -1,5 +1,6 @@
 import { Expose, Type } from 'class-transformer';
 import type { Employee } from '../entities/employee.entity.js';
+import { ContractResourceDto } from '#contracts/dto/contract-resource.dto.js';
 import { PayrollResourceDto } from '#payrolls/dto/payroll-resource.dto.js';
 import { PayslipResourceDto } from '#payslips/dto/payslip-resource.dto.js';
 import { RoleResourceDto } from '#rbac/dto/role.dto.js';
@@ -13,6 +14,10 @@ export class EmployeeDetailResourceDto extends EmployeeIndexResourceDto {
   @Expose({ name: 'active_payroll' })
   @Type(() => PayrollResourceDto)
   activePayroll: PayrollResourceDto | null;
+
+  @Expose({ name: 'contracts' })
+  @Type(() => ContractResourceDto)
+  contracts: ContractResourceDto[];
 
   /** Payslips linked directly to the employee via `payslip.employeeId`. */
   @Expose({ name: 'payslips' })
@@ -54,6 +59,9 @@ export class EmployeeDetailResourceDto extends EmployeeIndexResourceDto {
     resource.activePayroll = employee.activePayroll
       ? PayrollResourceDto.fromEntity(employee.activePayroll)
       : null;
+    resource.contracts = (employee.contracts ?? []).map((contract) =>
+      ContractResourceDto.fromEntity(contract),
+    );
     resource.payslips = (employee.payslips ?? []).map((payslip) =>
       PayslipResourceDto.fromEntity(payslip),
     );

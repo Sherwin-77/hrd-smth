@@ -79,7 +79,7 @@ export class AuthController {
   async me(
     @CurrentUser() employee: Employee,
   ): Promise<EmployeeDetailResourceDto> {
-    const full = await this.employees.findOneWithActivePayroll(employee.id);
+    const full = await this.employees.findOneDetail(employee.id);
     if (!full) {
       throw new NotFoundException(`Employee #${employee.id} not found`);
     }

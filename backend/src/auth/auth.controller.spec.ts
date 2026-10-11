@@ -5,7 +5,7 @@ import type { Employee } from '#employees/entities/employee.entity.js';
 
 describe('AuthController.me', () => {
   let controller: AuthController;
-  let employees: { findOneWithActivePayroll: ReturnType<typeof vi.fn> };
+  let employees: { findOneDetail: ReturnType<typeof vi.fn> };
   let rbac: {
     getPermissionNames: ReturnType<typeof vi.fn>;
     getEmployeeRoles: ReturnType<typeof vi.fn>;
@@ -14,7 +14,7 @@ describe('AuthController.me', () => {
   const user = { id: 'emp-id' } as Employee;
 
   beforeEach(() => {
-    employees = { findOneWithActivePayroll: vi.fn() };
+    employees = { findOneDetail: vi.fn() };
     rbac = {
       getPermissionNames: vi.fn(),
       getEmployeeRoles: vi.fn(),
@@ -25,8 +25,9 @@ describe('AuthController.me', () => {
       employees as never,
       rbac as never,
     );
-    employees.findOneWithActivePayroll.mockResolvedValue({
+    employees.findOneDetail.mockResolvedValue({
       id: 'emp-id',
+      contracts: [],
       payslips: [],
     });
     rbac.getEmployeeRoles.mockResolvedValue([]);

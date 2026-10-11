@@ -9,6 +9,7 @@ describe('EmployeesRepository', () => {
   let queryBuilder: {
     leftJoinAndMapOne: ReturnType<typeof vi.fn>;
     leftJoinAndSelect: ReturnType<typeof vi.fn>;
+    addOrderBy: ReturnType<typeof vi.fn>;
     where: ReturnType<typeof vi.fn>;
     getOne: ReturnType<typeof vi.fn>;
   };
@@ -22,6 +23,7 @@ describe('EmployeesRepository', () => {
     queryBuilder = {
       leftJoinAndMapOne: vi.fn().mockReturnThis(),
       leftJoinAndSelect: vi.fn().mockReturnThis(),
+      addOrderBy: vi.fn().mockReturnThis(),
       where: vi.fn().mockReturnThis(),
       getOne: vi.fn(),
     };
@@ -59,7 +61,7 @@ describe('EmployeesRepository', () => {
     ).resolves.toBeNull();
   });
 
-  it('findOneDetail joins payslips and maps the active payroll scoped by id', async () => {
+  it('findOneDetail joins contracts and payslips and maps the active payroll scoped by id', async () => {
     const employee = { id: 'employee-id' } as Employee;
     queryBuilder.getOne.mockResolvedValue(employee);
 
@@ -76,8 +78,21 @@ describe('EmployeesRepository', () => {
       { activeStatus: PayrollStatus.ACTIVE },
     );
     expect(queryBuilder.leftJoinAndSelect).toHaveBeenCalledWith(
+      'employee.contracts',
+      'contract',
+    );
+    expect(queryBuilder.leftJoinAndSelect).toHaveBeenCalledWith(
       'employee.payslips',
       'payslip',
+    );
+    expect(queryBuilder.addOrderBy).toHaveBeenCalledWith(
+      'payslip.date',
+      'DESC',
+    );
+    expect(queryBuilder.addOrderBy).toHaveBeenCalledWith(
+      'contract.endDate',
+      'DESC',
+      'NULLS FIRST',
     );
     expect(queryBuilder.where).toHaveBeenCalledWith('employee.id = :id', {
       id: 'employee-id',
