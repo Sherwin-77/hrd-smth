@@ -2,6 +2,7 @@ import { Expose, Type } from 'class-transformer';
 import { Payroll, PayrollStatus } from '#payrolls/entities/payroll.entity.js';
 import { ActionLinkDto } from '#common/dto/action-link.dto.js';
 import { getPayrollActions } from '#payrolls/payroll.workflow.js';
+import { EmployeeBriefResourceDto } from '#employees/dto/employee-brief-resource.dto.js';
 
 /**
  * Wire format is snake_case (via `@Expose` + global
@@ -36,10 +37,17 @@ export class PayrollResourceDto {
   @Type(() => ActionLinkDto)
   availableActions: ActionLinkDto[];
 
+  @Expose({ name: 'employee' })
+  @Type(() => EmployeeBriefResourceDto)
+  employee: EmployeeBriefResourceDto | null;
+
   static fromEntity(payroll: Payroll): PayrollResourceDto {
     const resource = new PayrollResourceDto();
     resource.id = payroll.id;
     resource.employeeId = payroll.employeeId;
+    resource.employee = payroll.employee
+      ? EmployeeBriefResourceDto.fromEntity(payroll.employee)
+      : null;
     resource.accountNumber = payroll.accountNumber;
     resource.accountName = payroll.accountName;
     resource.taxPercentage = payroll.taxPercentage;

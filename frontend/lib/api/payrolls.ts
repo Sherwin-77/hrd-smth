@@ -1,9 +1,16 @@
 import { apiFetch, toQueryString } from "./client";
-import type { ActionLink, EnumOption, ListQuery, Paginated } from "./types";
+import type {
+  ActionLink,
+  EmployeeBrief,
+  EnumOption,
+  ListQuery,
+  Paginated,
+} from "./types";
 
 export interface PayrollSummary {
   id: string;
   employee_id: string;
+  employee: EmployeeBrief | null;
   account_number: string;
   account_name: string;
   tax_percentage: number;

@@ -1,3 +1,11 @@
+// Minimal employee info embedded in contract, payroll, and payslip
+// responses so list views can show ownership without an extra fetch.
+export interface EmployeeBrief {
+  id: string;
+  name: string;
+  email: string;
+}
+
 export interface ListQuery {
   page?: number;
   limit?: number;

@@ -167,6 +167,26 @@ export default function PayrollDetailPage() {
         <h2 className="text-base font-semibold text-gray-900">Details</h2>
         <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
           <div>
+            <dt className="font-medium text-gray-600">Employee</dt>
+            <dd className="text-gray-900">
+              {payroll.employee ? (
+                <>
+                  <Link
+                    href={`/dashboard/employees/${payroll.employee.id}`}
+                    className="font-medium text-blue-700 hover:underline"
+                  >
+                    {payroll.employee.name}
+                  </Link>{" "}
+                  <span className="text-gray-600">
+                    ({payroll.employee.email})
+                  </span>
+                </>
+              ) : (
+                "-"
+              )}
+            </dd>
+          </div>
+          <div>
             <dt className="font-medium text-gray-600">Account name</dt>
             <dd className="text-gray-900">{payroll.account_name}</dd>
           </div>

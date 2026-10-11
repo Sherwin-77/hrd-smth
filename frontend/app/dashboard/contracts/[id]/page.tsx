@@ -257,6 +257,26 @@ export default function ContractDetailPage() {
         <h2 className="text-base font-semibold text-gray-900">Details</h2>
         <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
           <div>
+            <dt className="font-medium text-gray-600">Employee</dt>
+            <dd className="text-gray-900">
+              {contract.employee ? (
+                <>
+                  <Link
+                    href={`/dashboard/employees/${contract.employee.id}`}
+                    className="font-medium text-blue-700 hover:underline"
+                  >
+                    {contract.employee.name}
+                  </Link>{" "}
+                  <span className="text-gray-600">
+                    ({contract.employee.email})
+                  </span>
+                </>
+              ) : (
+                "-"
+              )}
+            </dd>
+          </div>
+          <div>
             <dt className="font-medium text-gray-600">Title</dt>
             <dd className="text-gray-900">{contract.title}</dd>
           </div>

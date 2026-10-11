@@ -4,6 +4,7 @@ import {
   IsIn,
   IsInt,
   IsOptional,
+  IsString,
   IsUUID,
   Max,
   Min,
@@ -38,6 +39,10 @@ export class FindContractsQueryDto {
   @IsOptional()
   @IsUUID()
   employeeId?: string;
+
+  @IsOptional()
+  @IsString()
+  search?: string;
 
   @IsOptional()
   @IsEnum(ContractStatus)

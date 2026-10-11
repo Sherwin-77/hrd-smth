@@ -2,6 +2,7 @@ import { Expose, Type } from 'class-transformer';
 import { Payslip, PayslipStatus } from '#payslips/entities/payslip.entity.js';
 import { ActionLinkDto } from '#common/dto/action-link.dto.js';
 import { getPayslipActions } from '#payslips/payslip.workflow.js';
+import { EmployeeBriefResourceDto } from '#employees/dto/employee-brief-resource.dto.js';
 
 /**
  * Wire format is snake_case (via `@Expose` + global
@@ -51,10 +52,17 @@ export class PayslipResourceDto {
   @Type(() => ActionLinkDto)
   availableActions: ActionLinkDto[];
 
+  @Expose({ name: 'employee' })
+  @Type(() => EmployeeBriefResourceDto)
+  employee: EmployeeBriefResourceDto | null;
+
   static fromEntity(payslip: Payslip): PayslipResourceDto {
     const resource = new PayslipResourceDto();
     resource.id = payslip.id;
     resource.employeeId = payslip.employeeId;
+    resource.employee = payslip.employee
+      ? EmployeeBriefResourceDto.fromEntity(payslip.employee)
+      : null;
     resource.payrollId = payslip.payrollId;
     resource.basicSalary = payslip.basicSalary;
     resource.overtime = payslip.overtime;

@@ -4,6 +4,7 @@ import {
   IsIn,
   IsInt,
   IsOptional,
+  IsString,
   IsUUID,
   Max,
   Min,
@@ -43,6 +44,10 @@ export class FindPayslipsQueryDto {
   @IsOptional()
   @IsUUID()
   payrollId?: string;
+
+  @IsOptional()
+  @IsString()
+  search?: string;
 
   @IsOptional()
   @IsEnum(PayslipStatus)

@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Brackets, Repository } from 'typeorm';
 import { CreateContractDto } from './dto/create-contract.dto.js';
 import {
   ContractSortField,
@@ -78,7 +78,9 @@ export class ContractsService {
       status: ContractStatus.PENDING,
     });
 
-    return ContractResourceDto.fromEntity(await this.contracts.save(contract));
+    const saved = await this.contracts.save(contract);
+    saved.employee = employee;
+    return ContractResourceDto.fromEntity(saved);
   }
 
   async findAll(
@@ -88,8 +90,10 @@ export class ContractsService {
     const limit = query.limit ?? 10;
     const sortBy = CONTRACT_SORT_COLUMNS[query.sortBy ?? 'created_at'];
     const order = query.order ?? 'DESC';
+    const search = query.search?.trim();
 
     const queryBuilder = this.contracts.createQueryBuilder('contract');
+    queryBuilder.leftJoinAndSelect('contract.employee', 'employee');
 
     if (query.employeeId) {
       queryBuilder.andWhere('contract.employeeId = :employeeId', {
@@ -107,6 +111,22 @@ export class ContractsService {
       queryBuilder.andWhere('contract.type = :type', {
         type: query.type,
       });
+    }
+
+    if (search) {
+      queryBuilder.andWhere(
+        new Brackets((qb) => {
+          qb.where('contract.title ILIKE :search', {
+            search: `%${search}%`,
+          })
+            .orWhere('employee.name ILIKE :search', {
+              search: `%${search}%`,
+            })
+            .orWhere('employee.email ILIKE :search', {
+              search: `%${search}%`,
+            });
+        }),
+      );
     }
 
     queryBuilder
@@ -183,6 +203,7 @@ export class ContractsService {
   async restore(id: string): Promise<ContractResourceDto> {
     const contract = await this.contracts.findOne({
       where: { id },
+      relations: { employee: true },
       withDeleted: true,
     });
     if (!contract) {
@@ -239,7 +260,10 @@ export class ContractsService {
   }
 
   private async findOneOrFail(id: string): Promise<Contract> {
-    const contract = await this.contracts.findOneBy({ id });
+    const contract = await this.contracts.findOne({
+      where: { id },
+      relations: { employee: true },
+    });
     if (!contract) {
       throw new NotFoundException(`Contract #${id} not found`);
     }

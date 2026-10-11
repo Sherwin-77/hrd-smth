@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { SubmitEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -94,6 +95,8 @@ export default function ContractsPage() {
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [page, setPage] = useState(1);
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [status, setStatus] = useState<"loading" | "ready" | "error">(
@@ -135,6 +138,7 @@ export default function ContractsPage() {
     listContracts(token, {
       page,
       limit: PAGE_SIZE,
+      search,
       status: statusFilter || undefined,
       type: typeFilter || undefined,
     })
@@ -158,7 +162,14 @@ export default function ContractsPage() {
     return () => {
       active = false;
     };
-  }, [router, page, statusFilter, typeFilter, permissionsReady, allowed]);
+  }, [router, page, search, statusFilter, typeFilter, permissionsReady, allowed]);
+
+  function handleSearch(event: SubmitEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setStatus("loading");
+    setPage(1);
+    setSearch(searchInput.trim());
+  }
 
   function handleFilterChange(setter: (value: string) => void) {
     return (value: string) => {
@@ -201,7 +212,26 @@ export default function ContractsPage() {
         <p className="mt-1 text-sm text-gray-600">
           {total} contract{total === 1 ? "" : "s"} found.
         </p>
-        <div className="mt-4 flex gap-2">
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+          <form onSubmit={handleSearch} className="flex w-full gap-2">
+            <label htmlFor="contract-search" className="sr-only">
+              Search contracts
+            </label>
+            <input
+              id="contract-search"
+              type="search"
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+              placeholder="Search by title or employee"
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-blue-700 focus:outline-none"
+            />
+            <button
+              type="submit"
+              className="shrink-0 rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800"
+            >
+              Search
+            </button>
+          </form>
           <FilterSelect
             id="contract-status"
             label="Filter by status"
@@ -242,6 +272,9 @@ export default function ContractsPage() {
             <thead>
               <tr className="border-b border-gray-200 text-gray-600">
                 <th scope="col" className="px-4 py-2 font-medium">
+                  Employee
+                </th>
+                <th scope="col" className="px-4 py-2 font-medium">
                   Title
                 </th>
                 <th scope="col" className="px-4 py-2 font-medium">
@@ -267,6 +300,23 @@ export default function ContractsPage() {
             <tbody>
               {rows.map((row) => (
                 <tr key={row.id} className="border-b border-gray-100">
+                  <td className="px-4 py-2">
+                    {row.employee ? (
+                      <>
+                        <Link
+                          href={`/dashboard/employees/${row.employee.id}`}
+                          className="font-medium text-blue-700 hover:underline"
+                        >
+                          {row.employee.name}
+                        </Link>
+                        <span className="block text-xs text-gray-500">
+                          {row.employee.email}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-gray-500">-</span>
+                    )}
+                  </td>
                   <td className="px-4 py-2 font-medium text-gray-900">
                     {row.title}
                   </td>

@@ -138,7 +138,7 @@ export default function PayrollsPage() {
             type="search"
             value={searchInput}
             onChange={(event) => setSearchInput(event.target.value)}
-            placeholder="Search by account name or number"
+            placeholder="Search by account name, number, or employee"
             className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-blue-700 focus:outline-none"
           />
           <label htmlFor="payroll-status" className="sr-only">
@@ -210,6 +210,9 @@ export default function PayrollsPage() {
             <thead>
               <tr className="border-b border-gray-200 text-gray-600">
                 <th scope="col" className="px-4 py-2 font-medium">
+                  Employee
+                </th>
+                <th scope="col" className="px-4 py-2 font-medium">
                   Account name
                 </th>
                 <th scope="col" className="px-4 py-2 font-medium">
@@ -229,6 +232,23 @@ export default function PayrollsPage() {
             <tbody>
               {rows.map((row) => (
                 <tr key={row.id} className="border-b border-gray-100">
+                  <td className="px-4 py-2">
+                    {row.employee ? (
+                      <>
+                        <Link
+                          href={`/dashboard/employees/${row.employee.id}`}
+                          className="font-medium text-blue-700 hover:underline"
+                        >
+                          {row.employee.name}
+                        </Link>
+                        <span className="block text-xs text-gray-500">
+                          {row.employee.email}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-gray-500">-</span>
+                    )}
+                  </td>
                   <td className="px-4 py-2 font-medium text-gray-900">
                     {row.account_name}
                   </td>

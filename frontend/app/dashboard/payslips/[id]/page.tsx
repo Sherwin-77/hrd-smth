@@ -169,6 +169,26 @@ export default function PayslipDetailPage() {
         <h2 className="text-base font-semibold text-gray-900">Details</h2>
         <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
           <div>
+            <dt className="font-medium text-gray-600">Employee</dt>
+            <dd className="text-gray-900">
+              {payslip.employee ? (
+                <>
+                  <Link
+                    href={`/dashboard/employees/${payslip.employee.id}`}
+                    className="font-medium text-blue-700 hover:underline"
+                  >
+                    {payslip.employee.name}
+                  </Link>{" "}
+                  <span className="text-gray-600">
+                    ({payslip.employee.email})
+                  </span>
+                </>
+              ) : (
+                "-"
+              )}
+            </dd>
+          </div>
+          <div>
             <dt className="font-medium text-gray-600">Basic salary</dt>
             <dd className="text-gray-900">{payslip.basic_salary}</dd>
           </div>

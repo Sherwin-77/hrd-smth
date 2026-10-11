@@ -6,6 +6,7 @@ import {
 } from '#contracts/entities/contract.entity.js';
 import { ActionLinkDto } from '#common/dto/action-link.dto.js';
 import { getContractActions } from '#contracts/contract.workflow.js';
+import { EmployeeBriefResourceDto } from '#employees/dto/employee-brief-resource.dto.js';
 
 /**
  * Wire format is snake_case (via `@Expose` + global
@@ -46,10 +47,17 @@ export class ContractResourceDto {
   @Type(() => ActionLinkDto)
   availableActions: ActionLinkDto[];
 
+  @Expose({ name: 'employee' })
+  @Type(() => EmployeeBriefResourceDto)
+  employee: EmployeeBriefResourceDto | null;
+
   static fromEntity(contract: Contract): ContractResourceDto {
     const resource = new ContractResourceDto();
     resource.id = contract.id;
     resource.employeeId = contract.employeeId;
+    resource.employee = contract.employee
+      ? EmployeeBriefResourceDto.fromEntity(contract.employee)
+      : null;
     resource.type = contract.type;
     resource.title = contract.title;
     resource.startDate = contract.startDate;

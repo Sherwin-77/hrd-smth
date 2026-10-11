@@ -72,6 +72,7 @@ export class PayrollsService {
 
     try {
       const saved = await this.payrolls.save(payroll);
+      saved.employee = employee;
       return PayrollResourceDto.fromEntity(saved);
     } catch (error) {
       this.throwIfActiveConflict(error, createPayrollDto.employeeId);
@@ -89,6 +90,7 @@ export class PayrollsService {
     const search = query.search?.trim();
 
     const queryBuilder = this.payrolls.createQueryBuilder('payroll');
+    queryBuilder.leftJoinAndSelect('payroll.employee', 'employee');
 
     if (query.employeeId) {
       queryBuilder.andWhere('payroll.employeeId = :employeeId', {
@@ -107,9 +109,16 @@ export class PayrollsService {
         new Brackets((qb) => {
           qb.where('payroll.accountNumber ILIKE :search', {
             search: `%${search}%`,
-          }).orWhere('payroll.accountName ILIKE :search', {
-            search: `%${search}%`,
-          });
+          })
+            .orWhere('payroll.accountName ILIKE :search', {
+              search: `%${search}%`,
+            })
+            .orWhere('employee.name ILIKE :search', {
+              search: `%${search}%`,
+            })
+            .orWhere('employee.email ILIKE :search', {
+              search: `%${search}%`,
+            });
         }),
       );
     }
@@ -169,6 +178,7 @@ export class PayrollsService {
   async restore(id: string): Promise<PayrollResourceDto> {
     const payroll = await this.payrolls.findOne({
       where: { id },
+      relations: { employee: true },
       withDeleted: true,
     });
     if (!payroll) {
@@ -207,7 +217,10 @@ export class PayrollsService {
   }
 
   private async findOneOrFail(id: string): Promise<Payroll> {
-    const payroll = await this.payrolls.findOneBy({ id });
+    const payroll = await this.payrolls.findOne({
+      where: { id },
+      relations: { employee: true },
+    });
     if (!payroll) {
       throw new NotFoundException(`Payroll #${id} not found`);
     }

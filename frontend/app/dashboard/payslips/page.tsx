@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { SubmitEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -26,6 +27,8 @@ export default function PayslipsPage() {
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [page, setPage] = useState(1);
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [status, setStatus] = useState<"loading" | "ready" | "error">(
     "loading",
@@ -57,6 +60,7 @@ export default function PayslipsPage() {
     listPayslips(token, {
       page,
       limit: PAGE_SIZE,
+      search,
       status: statusFilter || undefined,
     })
       .then((result) => {
@@ -79,7 +83,15 @@ export default function PayslipsPage() {
     return () => {
       active = false;
     };
-  }, [router, page, statusFilter, permissionsReady, allowed]);
+  }, [router, page, search, statusFilter, permissionsReady, allowed]);
+
+  function handleSearch(event: SubmitEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setStatus("loading");
+    setError(null);
+    setPage(1);
+    setSearch(searchInput.trim());
+  }
 
   function changePage(next: number) {
     if (next < 1 || (totalPages > 0 && next > totalPages)) return;
@@ -115,9 +127,20 @@ export default function PayslipsPage() {
           {total} payslip{total === 1 ? "" : "s"} found.
         </p>
         <form
-          onSubmit={(event) => event.preventDefault()}
-          className="mt-4 flex gap-2"
+          onSubmit={handleSearch}
+          className="mt-4 flex flex-col gap-2 sm:flex-row"
         >
+          <label htmlFor="payslip-search" className="sr-only">
+            Search payslips
+          </label>
+          <input
+            id="payslip-search"
+            type="search"
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+            placeholder="Search by employee or payroll account"
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-blue-700 focus:outline-none"
+          />
           <label htmlFor="payslip-status" className="sr-only">
             Filter by status
           </label>
@@ -161,6 +184,12 @@ export default function PayslipsPage() {
               </button>
             </p>
           ) : null}
+          <button
+            type="submit"
+            className="shrink-0 rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800"
+          >
+            Search
+          </button>
         </form>
       </section>
 
@@ -180,6 +209,9 @@ export default function PayslipsPage() {
           <table className="w-full min-w-[720px] text-left text-sm">
             <thead>
               <tr className="border-b border-gray-200 text-gray-600">
+                <th scope="col" className="px-4 py-2 font-medium">
+                  Employee
+                </th>
                 <th scope="col" className="px-4 py-2 font-medium">
                   Date
                 </th>
@@ -212,6 +244,23 @@ export default function PayslipsPage() {
             <tbody>
               {rows.map((row) => (
                 <tr key={row.id} className="border-b border-gray-100">
+                  <td className="px-4 py-2">
+                    {row.employee ? (
+                      <>
+                        <Link
+                          href={`/dashboard/employees/${row.employee.id}`}
+                          className="font-medium text-blue-700 hover:underline"
+                        >
+                          {row.employee.name}
+                        </Link>
+                        <span className="block text-xs text-gray-500">
+                          {row.employee.email}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-gray-500">-</span>
+                    )}
+                  </td>
                   <td className="px-4 py-2 font-medium text-gray-900">
                     {new Date(row.date).toLocaleDateString()}
                   </td>

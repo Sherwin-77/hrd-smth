@@ -1,9 +1,6 @@
-import {
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Brackets, Repository } from 'typeorm';
 import { CreatePayslipDto } from './dto/create-payslip.dto.js';
 import {
   FindPayslipsQueryDto,
@@ -56,8 +53,9 @@ export class PayslipsService {
   async create(
     createPayslipDto: CreatePayslipDto,
   ): Promise<PayslipResourceDto> {
-    const payroll = await this.payrolls.findOneBy({
-      id: createPayslipDto.payrollId,
+    const payroll = await this.payrolls.findOne({
+      where: { id: createPayslipDto.payrollId },
+      relations: { employee: true },
     });
     if (!payroll) {
       throw new NotFoundException(
@@ -85,7 +83,9 @@ export class PayslipsService {
       status: PayslipStatus.PENDING,
     });
 
-    return PayslipResourceDto.fromEntity(await this.payslips.save(payslip));
+    const saved = await this.payslips.save(payslip);
+    saved.employee = payroll.employee;
+    return PayslipResourceDto.fromEntity(saved);
   }
 
   async findAll(
@@ -95,8 +95,12 @@ export class PayslipsService {
     const limit = query.limit ?? 10;
     const sortBy = PAYSLIP_SORT_COLUMNS[query.sortBy ?? 'created_at'];
     const order = query.order ?? 'DESC';
+    const search = query.search?.trim();
 
     const queryBuilder = this.payslips.createQueryBuilder('payslip');
+    queryBuilder
+      .leftJoinAndSelect('payslip.employee', 'employee')
+      .leftJoin('payslip.payroll', 'payroll');
 
     if (query.employeeId) {
       queryBuilder.andWhere('payslip.employeeId = :employeeId', {
@@ -114,6 +118,25 @@ export class PayslipsService {
       queryBuilder.andWhere('payslip.status = :status', {
         status: query.status,
       });
+    }
+
+    if (search) {
+      queryBuilder.andWhere(
+        new Brackets((qb) => {
+          qb.where('employee.name ILIKE :search', {
+            search: `%${search}%`,
+          })
+            .orWhere('employee.email ILIKE :search', {
+              search: `%${search}%`,
+            })
+            .orWhere('payroll.accountName ILIKE :search', {
+              search: `%${search}%`,
+            })
+            .orWhere('payroll.accountNumber ILIKE :search', {
+              search: `%${search}%`,
+            });
+        }),
+      );
     }
 
     queryBuilder
@@ -191,6 +214,7 @@ export class PayslipsService {
   async restore(id: string): Promise<PayslipResourceDto> {
     const payslip = await this.payslips.findOne({
       where: { id },
+      relations: { employee: true },
       withDeleted: true,
     });
     if (!payslip) {
@@ -223,7 +247,10 @@ export class PayslipsService {
   }
 
   private async findOneOrFail(id: string): Promise<Payslip> {
-    const payslip = await this.payslips.findOneBy({ id });
+    const payslip = await this.payslips.findOne({
+      where: { id },
+      relations: { employee: true },
+    });
     if (!payslip) {
       throw new NotFoundException(`Payslip #${id} not found`);
     }
