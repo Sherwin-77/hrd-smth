@@ -15,10 +15,14 @@ import {
   updateContract,
 } from "@/lib/api";
 import { useEnumOptions } from "@/lib/use-enum-options";
+import NoAccess from "@/components/shared/no-access";
+import { can, usePermissions } from "@/lib/permissions";
 
 export default function EditContractPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const { permissions, ready: permissionsReady } = usePermissions();
+  const allowed = can(permissions, "contracts", "manage");
   const [initial, setInitial] = useState<ContractFormValues | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">(
     "loading",
@@ -41,6 +45,8 @@ export default function EditContractPage() {
   }, [router, typeError]);
 
   useEffect(() => {
+    if (!permissionsReady) return;
+    if (!allowed) return;
     const token = getAuthToken();
     if (!token) {
       router.replace("/login");
@@ -72,7 +78,7 @@ export default function EditContractPage() {
     return () => {
       active = false;
     };
-  }, [router, params.id]);
+  }, [router, params.id, permissionsReady, allowed]);
 
   async function handleSubmit(values: ContractFormValues) {
     const token = getAuthToken();
@@ -106,8 +112,18 @@ export default function EditContractPage() {
     }
   }
 
-  if (status === "loading") {
+  if (status === "loading" || !permissionsReady) {
     return <p className="text-sm text-gray-600">Loading...</p>;
+  }
+
+  if (permissionsReady && !allowed) {
+    return (
+      <NoAccess
+        title="Edit contract"
+        backHref={`/dashboard/contracts/${params.id}`}
+        backLabel="Back to detail"
+      />
+    );
   }
 
   if (status === "error" || !initial) {

@@ -8,3 +8,4 @@ export * from "./employees";
 export * from "./payrolls";
 export * from "./payslips";
 export * from "./contracts";
+export * from "./roles";

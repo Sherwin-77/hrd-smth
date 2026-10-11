@@ -10,11 +10,16 @@ import {
   listEmployees,
   type EmployeeIndex,
 } from "@/lib/api";
+import NoAccess from "@/components/shared/no-access";
+import { can, usePermissions } from "@/lib/permissions";
 
 const PAGE_SIZE = 10;
 
 export default function EmployeesPage() {
   const router = useRouter();
+  const { permissions, ready: permissionsReady } = usePermissions();
+  const allowed = can(permissions, "employees", "view");
+  const canManage = can(permissions, "employees", "manage");
   const [rows, setRows] = useState<EmployeeIndex[]>([]);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -27,6 +32,8 @@ export default function EmployeesPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!permissionsReady) return;
+    if (!allowed) return;
     const token = getAuthToken();
     if (!token) {
       router.replace("/login");
@@ -58,7 +65,7 @@ export default function EmployeesPage() {
     return () => {
       active = false;
     };
-  }, [router, page, search]);
+  }, [router, page, search, permissionsReady, allowed]);
 
   function handleSearch(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -74,17 +81,29 @@ export default function EmployeesPage() {
     setPage(next);
   }
 
+  if (permissionsReady && !allowed) {
+    return (
+      <NoAccess
+        title="Employees"
+        backHref="/dashboard"
+        backLabel="Back to overview"
+      />
+    );
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <section className="rounded-lg border border-gray-200 bg-white p-6">
         <div className="flex items-center justify-between gap-4">
           <h1 className="text-xl font-semibold text-gray-900">Employees</h1>
-          <Link
-            href="/dashboard/employees/new"
-            className="shrink-0 rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800"
-          >
-            Create employee
-          </Link>
+          {canManage ? (
+            <Link
+              href="/dashboard/employees/new"
+              className="shrink-0 rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800"
+            >
+              Create employee
+            </Link>
+          ) : null}
         </div>
         <p className="mt-1 text-sm text-gray-600">
           {total} employee{total === 1 ? "" : "s"} found.
@@ -187,7 +206,9 @@ export default function EmployeesPage() {
           <button
             type="button"
             onClick={() => changePage(page + 1)}
-            disabled={totalPages === 0 || page >= totalPages || status === "loading"}
+            disabled={
+              totalPages === 0 || page >= totalPages || status === "loading"
+            }
             className="rounded-md border border-gray-300 px-3 py-1 font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
           >
             Next

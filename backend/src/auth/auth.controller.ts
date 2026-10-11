@@ -18,6 +18,7 @@ import {
   Public,
   type SessionRecord,
 } from '@nestjs/authentication';
+import { Can } from '@nestjs/authorization';
 import type { Request } from 'express';
 import { AuthService } from './auth.service.js';
 import { LoginDto } from './dto/login.dto.js';
@@ -27,6 +28,7 @@ import { SessionResourceDto } from './dto/session-resource.dto.js';
 import type { Employee } from '#employees/entities/employee.entity.js';
 import { EmployeesRepository } from '#employees/employees.repository.js';
 import { EmployeeDetailResourceDto } from '#employees/dto/employee-detail-resource.dto.js';
+import { RbacService } from '#rbac/rbac.service.js';
 
 function sessionMeta(req: Request): {
   userAgent?: string | null;
@@ -45,6 +47,7 @@ export class AuthController {
   constructor(
     private readonly auth: AuthService,
     private readonly employees: EmployeesRepository,
+    private readonly rbac: RbacService,
   ) {}
 
   @Post('login')
@@ -64,6 +67,7 @@ export class AuthController {
 
   @Post('logout')
   @UseGuards(AuthenticationGuard)
+  @Can.Anyone()
   @HttpCode(HttpStatus.NO_CONTENT)
   async logout(@CurrentSession() session: SessionRecord): Promise<void> {
     await this.auth.logout(session.id);
@@ -71,6 +75,7 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(AuthenticationGuard)
+  @Can.Anyone()
   async me(
     @CurrentUser() employee: Employee,
   ): Promise<EmployeeDetailResourceDto> {
@@ -78,11 +83,16 @@ export class AuthController {
     if (!full) {
       throw new NotFoundException(`Employee #${employee.id} not found`);
     }
-    return EmployeeDetailResourceDto.fromEntity(full);
+    const resource = EmployeeDetailResourceDto.fromEntity(full);
+    resource.permissions = await this.rbac.getPermissionNames(employee.id);
+    resource.roles = await this.rbac.getEmployeeRoles(employee.id);
+    resource.isSuperadmin = await this.rbac.isSuperadmin(employee.id);
+    return resource;
   }
 
   @Get('sessions')
   @UseGuards(AuthenticationGuard)
+  @Can.Anyone()
   async listSessions(
     @CurrentUser() employee: Employee,
     @CurrentSession() session: SessionRecord,
@@ -97,6 +107,7 @@ export class AuthController {
    */
   @Delete('sessions')
   @UseGuards(AuthenticationGuard)
+  @Can.Anyone()
   @HttpCode(HttpStatus.NO_CONTENT)
   async revokeOthers(
     @CurrentUser() employee: Employee,
@@ -107,6 +118,7 @@ export class AuthController {
 
   @Delete('sessions/:id')
   @UseGuards(AuthenticationGuard)
+  @Can.Anyone()
   @HttpCode(HttpStatus.NO_CONTENT)
   async revokeOne(
     @CurrentUser() employee: Employee,
@@ -117,6 +129,7 @@ export class AuthController {
 
   @Post('change-password')
   @UseGuards(AuthenticationGuard)
+  @Can.Anyone()
   @HttpCode(HttpStatus.NO_CONTENT)
   async changePassword(
     @CurrentUser() employee: Employee,

@@ -2,6 +2,7 @@ import { Expose, Type } from 'class-transformer';
 import type { Employee } from '../entities/employee.entity.js';
 import { PayrollResourceDto } from '#payrolls/dto/payroll-resource.dto.js';
 import { PayslipResourceDto } from '#payslips/dto/payslip-resource.dto.js';
+import { RoleResourceDto } from '#rbac/dto/role.dto.js';
 import { EmployeeIndexResourceDto } from './employee-index-resource.dto.js';
 
 export class EmployeeDetailResourceDto extends EmployeeIndexResourceDto {
@@ -17,6 +18,25 @@ export class EmployeeDetailResourceDto extends EmployeeIndexResourceDto {
   @Expose({ name: 'payslips' })
   @Type(() => PayslipResourceDto)
   payslips: PayslipResourceDto[];
+
+  /**
+   * Effective permission names (union across roles). Only populated on
+   * `GET /auth/me`; empty elsewhere.
+   */
+  @Expose({ name: 'permissions' })
+  permissions: string[] = [];
+
+  /** Assigned roles. Only populated on `GET /auth/me`; empty elsewhere. */
+  @Expose({ name: 'roles' })
+  @Type(() => RoleResourceDto)
+  roles: RoleResourceDto[] = [];
+
+  /**
+   * Whether the employee holds the system superadmin role (which bypasses
+   * permission checks). Only populated on `GET /auth/me`; false elsewhere.
+   */
+  @Expose({ name: 'is_superadmin' })
+  isSuperadmin = false;
 
   static override fromEntity(employee: Employee): EmployeeDetailResourceDto {
     const resource = new EmployeeDetailResourceDto();

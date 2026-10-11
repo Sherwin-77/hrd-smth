@@ -2,40 +2,20 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
 import {
   clearAuthSession,
-  fetchCurrentEmployee,
   getAuthToken,
-  getStoredEmployee,
   logoutRequest,
   type LoginEmployee,
 } from "@/lib/api/auth";
+import { hasAnyView, usePermissions } from "@/lib/permissions";
 
+/**
+ * Identity from the shared `PermissionsProvider` (`/auth/me`, fetched
+ * once). Callers must render under a lifted provider (root layout).
+ */
 export function useCurrentEmployee() {
-  const router = useRouter();
-  const [employee, setEmployee] = useState<LoginEmployee | null>(() =>
-    getStoredEmployee(),
-  );
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    const token = getAuthToken();
-    if (!token) {
-      router.replace("/login");
-      return;
-    }
-    fetchCurrentEmployee(token)
-      .then((current) => {
-        setEmployee(current);
-        setReady(true);
-      })
-      .catch(() => {
-        clearAuthSession();
-        router.replace("/login");
-      });
-  }, [router]);
-
+  const { employee, ready } = usePermissions();
   return { employee, ready };
 }
 
@@ -55,10 +35,27 @@ function isActiveLink(href: string, pathname: string): boolean {
 interface SiteHeaderProps {
   employee: LoginEmployee | null;
   activePath: string;
+  /**
+   * When provided (dashboard pages), the Dashboard link hides once
+   * permissions resolve and the user has no view access. Omitted on
+   * profile pages, where the link always shows.
+   */
+  permissions?: string[];
+  permissionsReady?: boolean;
 }
 
-export default function SiteHeader({ employee, activePath }: SiteHeaderProps) {
+export default function SiteHeader({
+  employee,
+  activePath,
+  permissions,
+  permissionsReady,
+}: SiteHeaderProps) {
   const router = useRouter();
+  const links = NAV_LINKS.filter((link) => {
+    if (link.href !== "/dashboard") return true;
+    if (permissions === undefined || !permissionsReady) return true;
+    return hasAnyView(permissions);
+  });
 
   async function handleSignOut() {
     const token = getAuthToken();
@@ -76,11 +73,8 @@ export default function SiteHeader({ employee, activePath }: SiteHeaderProps) {
   return (
     <header className="border-b border-gray-200 bg-white">
       <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-        <nav
-          aria-label="Primary"
-          className="flex min-w-0 items-center gap-4"
-        >
-          {NAV_LINKS.map((link) => {
+        <nav aria-label="Primary" className="flex min-w-0 items-center gap-4">
+          {links.map((link) => {
             const isActive = isActiveLink(link.href, activePath);
             return (
               <Link

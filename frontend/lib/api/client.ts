@@ -7,7 +7,24 @@ export interface BackendErrorBody {
   message?: string | string[];
 }
 
-export function backendMessage(body: BackendErrorBody | null, fallback: string) {
+/** Thrown for HTTP 403 so pages can render "no access" instead of an error. */
+export class ForbiddenError extends Error {
+  readonly status = 403;
+
+  constructor(message?: string) {
+    super(message ?? "You do not have access to this resource.");
+    this.name = "ForbiddenError";
+  }
+}
+
+export function isForbidden(error: unknown): boolean {
+  return error instanceof ForbiddenError;
+}
+
+export function backendMessage(
+  body: BackendErrorBody | null,
+  fallback: string,
+) {
   if (!body) return fallback;
   if (Array.isArray(body.message)) return body.message.join(", ");
   if (typeof body.message === "string" && body.message.length > 0) {
@@ -39,6 +56,13 @@ export async function apiFetch<T>(
     }
     if (res.status === 401) {
       throw new Error("Session expired. Please sign in again.");
+    }
+    if (res.status === 403) {
+      throw new ForbiddenError(
+        body && typeof body.message === "string" && body.message.length > 0
+          ? body.message
+          : undefined,
+      );
     }
     throw new Error(backendMessage(body, fallback));
   }

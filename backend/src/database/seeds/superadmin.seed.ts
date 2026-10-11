@@ -5,6 +5,11 @@ import {
   Employee,
   type EmployeeSex,
 } from '#employees/entities/employee.entity.js';
+import { Role } from '#rbac/entities/role.entity.js';
+import { Permission } from '#rbac/entities/permission.entity.js';
+import { RolePermission } from '#rbac/entities/role-permission.entity.js';
+import { EmployeeRole } from '#rbac/entities/employee-role.entity.js';
+import { RbacService } from '#rbac/rbac.service.js';
 
 export interface SuperadminSeedOptions {
   email: string;
@@ -93,4 +98,24 @@ export async function seedSuperadminWithDataSource(
   const repository = dataSource.getRepository(Employee);
   const passwords = new PasswordHasher();
   return seedSuperadmin(repository, passwords, options);
+}
+
+/**
+ * Idempotent RBAC bootstrap for the seeded superadmin: sync the permission
+ * catalog from the registry and grant the system `superadmin` role (which
+ * bypasses permission checks) to the given employee.
+ */
+export async function seedRbacForSuperadmin(
+  dataSource: DataSource,
+  employeeId: string,
+): Promise<void> {
+  const rbac = new RbacService(
+    dataSource.getRepository(Role),
+    dataSource.getRepository(Permission),
+    dataSource.getRepository(RolePermission),
+    dataSource.getRepository(EmployeeRole),
+    dataSource.getRepository(Employee),
+  );
+  await rbac.syncPermissions();
+  await rbac.assignSuperadmin(employeeId);
 }

@@ -13,9 +13,13 @@ import {
   listEmployeeSexes,
 } from "@/lib/api";
 import { useEnumOptions } from "@/lib/use-enum-options";
+import NoAccess from "@/components/shared/no-access";
+import { can, usePermissions } from "@/lib/permissions";
 
 export default function NewEmployeePage() {
   const router = useRouter();
+  const { permissions, ready: permissionsReady } = usePermissions();
+  const allowed = can(permissions, "employees", "manage");
   const [saving, setSaving] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const {
@@ -65,6 +69,20 @@ export default function NewEmployeePage() {
     } finally {
       setSaving(false);
     }
+  }
+
+  if (!permissionsReady) {
+    return <p className="text-sm text-gray-600">Loading...</p>;
+  }
+
+  if (!allowed) {
+    return (
+      <NoAccess
+        title="New employee"
+        backHref="/dashboard/employees"
+        backLabel="Back to employees"
+      />
+    );
   }
 
   return (

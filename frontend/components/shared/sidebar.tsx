@@ -2,18 +2,32 @@
 
 import Link from "next/link";
 import { NAV_ITEMS } from "@/lib/sidebar";
+import { can, hasAnyView } from "@/lib/permissions";
 
 interface SidebarProps {
   activePath: string;
   collapsed: boolean;
   onToggleCollapsed: () => void;
+  permissions: string[];
+  permissionsReady: boolean;
 }
 
 export default function Sidebar({
   activePath,
   collapsed,
   onToggleCollapsed,
+  permissions,
+  permissionsReady,
 }: SidebarProps) {
+  // Fail closed while permissions resolve: render an empty nav (same
+  // width, no links) rather than flashing every link before filtering.
+  const items = NAV_ITEMS.filter((item) => {
+    if (!permissionsReady) return false;
+    if (item.id === "overview") return hasAnyView(permissions);
+    if (item.requiredView === null) return true;
+    return can(permissions, item.requiredView, "view");
+  });
+
   return (
     <aside
       aria-label="Dashboard navigation"
@@ -40,8 +54,11 @@ export default function Sidebar({
       </div>
 
       <nav aria-label="Sections" className="flex-1 overflow-y-auto p-2">
+        {!permissionsReady ? (
+          <p className="px-2 py-2 text-sm text-gray-600">Loading...</p>
+        ) : null}
         <ul className="flex flex-col gap-1">
-          {NAV_ITEMS.map((item) => {
+          {items.map((item) => {
             const isActive =
               item.href === "/dashboard"
                 ? activePath === "/dashboard"

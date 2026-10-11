@@ -11,6 +11,7 @@
 import 'dotenv/config';
 import {
   resolveSuperadminSeedOptions,
+  seedRbacForSuperadmin,
   seedSuperadminWithDataSource,
 } from '#database/seeds/superadmin.seed.js';
 import { AppDataSource } from '#data-source.js';
@@ -33,6 +34,8 @@ async function main(): Promise<void> {
         `Superadmin ${employee.email} already exists (${employee.id}), skipping`,
       );
     }
+    await seedRbacForSuperadmin(dataSource, employee.id);
+    console.log(`Granted system superadmin role to ${employee.email}`);
   } finally {
     await dataSource.destroy();
   }

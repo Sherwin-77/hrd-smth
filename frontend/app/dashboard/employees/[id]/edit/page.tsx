@@ -15,10 +15,14 @@ import {
   updateEmployee,
 } from "@/lib/api";
 import { useEnumOptions } from "@/lib/use-enum-options";
+import NoAccess from "@/components/shared/no-access";
+import { can, usePermissions } from "@/lib/permissions";
 
 export default function EditEmployeePage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const { permissions, ready: permissionsReady } = usePermissions();
+  const allowed = can(permissions, "employees", "manage");
   const [initial, setInitial] = useState<EmployeeFormValues | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">(
     "loading",
@@ -34,6 +38,8 @@ export default function EditEmployeePage() {
   } = useEnumOptions(listEmployeeSexes);
 
   useEffect(() => {
+    if (!permissionsReady) return;
+    if (!allowed) return;
     const token = getAuthToken();
     if (!token) {
       router.replace("/login");
@@ -69,7 +75,7 @@ export default function EditEmployeePage() {
     return () => {
       active = false;
     };
-  }, [router, params.id]);
+  }, [router, params.id, permissionsReady, allowed]);
 
   useEffect(() => {
     if (sexError && sexError.includes("Session expired")) {
@@ -113,8 +119,18 @@ export default function EditEmployeePage() {
     }
   }
 
-  if (status === "loading") {
+  if (status === "loading" || !permissionsReady) {
     return <p className="text-sm text-gray-600">Loading...</p>;
+  }
+
+  if (permissionsReady && !allowed) {
+    return (
+      <NoAccess
+        title="Edit employee"
+        backHref={`/dashboard/employees/${params.id}`}
+        backLabel="Back to detail"
+      />
+    );
   }
 
   if (status === "error" || !initial) {

@@ -17,6 +17,18 @@ export interface EmployeeDetail {
   updated_at: string;
   active_payroll: PayrollSummary | null;
   payslips: PayslipSummary[];
+  /** Populated only on `GET /auth/me`; absent on employee endpoints. */
+  permissions?: string[];
+  roles?: EmployeeRoleRef[];
+  /** Populated only on `GET /auth/me`; absent on employee endpoints. */
+  is_superadmin?: boolean;
+}
+
+export interface EmployeeRoleRef {
+  id: string;
+  name: string;
+  is_system: boolean;
+  permissions: string[];
 }
 
 export interface EmployeeIndex {
@@ -72,9 +84,7 @@ export async function listEmployees(
   );
 }
 
-export async function listEmployeeSexes(
-  token: string,
-): Promise<EnumOption[]> {
+export async function listEmployeeSexes(token: string): Promise<EnumOption[]> {
   return apiFetch<EnumOption[]>(
     "/employees/sexes",
     token,
@@ -126,10 +136,7 @@ export async function updateEmployee(
   );
 }
 
-export async function deleteEmployee(
-  token: string,
-  id: string,
-): Promise<void> {
+export async function deleteEmployee(token: string, id: string): Promise<void> {
   await apiFetch<void>(
     `/employees/${id}`,
     token,
@@ -147,5 +154,33 @@ export async function listEmployeesWithActivePayroll(
     token,
     undefined,
     "Could not load employees.",
+  );
+}
+
+export async function fetchEmployeeRoles(
+  token: string,
+  employeeId: string,
+): Promise<EmployeeRoleRef[]> {
+  return apiFetch<EmployeeRoleRef[]>(
+    `/employees/${employeeId}/roles`,
+    token,
+    undefined,
+    "Could not load employee roles.",
+  );
+}
+
+export async function setEmployeeRoles(
+  token: string,
+  employeeId: string,
+  roleIds: string[],
+): Promise<EmployeeRoleRef[]> {
+  return apiFetch<EmployeeRoleRef[]>(
+    `/employees/${employeeId}/roles`,
+    token,
+    {
+      method: "PUT",
+      body: JSON.stringify({ role_ids: roleIds }),
+    },
+    "Could not update employee roles.",
   );
 }

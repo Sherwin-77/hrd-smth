@@ -13,9 +13,15 @@ import {
   getAuthToken,
   listEmployees,
 } from "@/lib/api";
+import NoAccess from "@/components/shared/no-access";
+import { can, usePermissions } from "@/lib/permissions";
 
 export default function NewPayrollPage() {
   const router = useRouter();
+  const { permissions, ready: permissionsReady } = usePermissions();
+  const canManage = can(permissions, "payrolls", "manage");
+  const canSeeEmployees = can(permissions, "employees", "view");
+  const allowed = canManage && canSeeEmployees;
   const [saving, setSaving] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [employeeSearch, setEmployeeSearch] = useState("");
@@ -25,6 +31,8 @@ export default function NewPayrollPage() {
   const [searchingEmployees, setSearchingEmployees] = useState(true);
 
   useEffect(() => {
+    if (!permissionsReady) return;
+    if (!allowed) return;
     const token = getAuthToken();
     if (!token) {
       router.replace("/login");
@@ -53,7 +61,7 @@ export default function NewPayrollPage() {
       active = false;
       clearTimeout(timer);
     };
-  }, [router, employeeSearch]);
+  }, [router, employeeSearch, permissionsReady, allowed]);
 
   async function handleSubmit(values: PayrollFormValues) {
     const token = getAuthToken();
@@ -83,6 +91,25 @@ export default function NewPayrollPage() {
     } finally {
       setSaving(false);
     }
+  }
+
+  if (!permissionsReady) {
+    return <p className="text-sm text-gray-600">Loading...</p>;
+  }
+
+  if (!allowed) {
+    return (
+      <NoAccess
+        title="New payroll"
+        message={
+          !canManage
+            ? "You do not have access to create payrolls."
+            : "You do not have access to the employee list needed for this form."
+        }
+        backHref="/dashboard/payrolls"
+        backLabel="Back to payrolls"
+      />
+    );
   }
 
   return (

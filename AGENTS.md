@@ -71,9 +71,9 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 - **There is no `typecheck` script.** `npm run build` (`nest build`, `tsc` under the hood) is the typecheck. `tsconfig.build.json` excludes `test/` and `**/*spec.ts`, so a green build does not typecheck tests.
 - Lint is **oxlint with type-aware rules**, not eslint: `npm run lint` → `oxlint --type-aware src/ test/`. `.oxlintrc.json` sets `no-floating-promises: error` and turns `no-explicit-any` off.
 - Format with prettier (`singleQuote`, `trailingComma: all`). `npm run format` globs `src/**`, `test/**`.
-- Auth is bearer-session based via `@nestjs/authentication`: `AuthenticationModule.forRoot({ session })` registers its guard **globally**, so every route is authenticated unless marked `@Public()` (only `POST /auth/login` is).
+- Auth is bearer-session based via `@nestjs/authentication`: `AuthenticationModule.forRoot({ session })` registers its guard **globally**, so every route is authenticated unless marked `@Public()` (only `POST /auth/login` is). Authorization is permission based via `@nestjs/authorization`, mimicking spatie style permission.
 - Controllers sit behind `AuthenticationGuard` and validate ids with `ParseUUIDPipe`. Statuses are const-object unions, not TS enums (e.g `PayrollStatus`: `active`/`inactive`; `PayslipStatus`: `pending`/`approved`/`rejected`). Use resource DTO for any response unless stated otherwise.
-- `@casl/ability` is installed but unused anywhere in `src/`; authentication is built (see above) but role/ability authorization is still unbuilt.
+- Controller authorization using `@Can` method, using `RbacPolicy` to validate permission. Update `rbac\permissions.registry.ts` and its spec accordingly when creating new endpoint.
 
 ### Database
 
@@ -107,6 +107,7 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 | Backend typecheck | `npm run build` | `backend/` |
 | Backend unit tests | `npm test` | `backend/` |
 | Backend e2e tests (needs Postgres) | `npm run test:e2e` | `backend/` |
+| Backend create new migration file | `npm run make:migration create-foo-tables` | `backend/` |
 | Seed starter superadmin (idempotent, needs Postgres) | `npm run seed` | `backend/` |
 | Frontend dev server (port 3000) | `npm run dev` | `frontend/` |
 | Full stack with Postgres | `docker compose up --build` | repo root |

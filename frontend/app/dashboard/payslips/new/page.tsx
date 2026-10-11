@@ -13,9 +13,15 @@ import {
   getAuthToken,
   listEmployeesWithActivePayroll,
 } from "@/lib/api";
+import NoAccess from "@/components/shared/no-access";
+import { can, usePermissions } from "@/lib/permissions";
 
 export default function NewPayslipPage() {
   const router = useRouter();
+  const { permissions, ready: permissionsReady } = usePermissions();
+  const canManage = can(permissions, "payslips", "manage");
+  const canSeeEmployees = can(permissions, "employees", "view");
+  const allowed = canManage && canSeeEmployees;
   const [saving, setSaving] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [employeeSearch, setEmployeeSearch] = useState("");
@@ -25,6 +31,8 @@ export default function NewPayslipPage() {
   const [searchingEmployees, setSearchingEmployees] = useState(true);
 
   useEffect(() => {
+    if (!permissionsReady) return;
+    if (!allowed) return;
     const token = getAuthToken();
     if (!token) {
       router.replace("/login");
@@ -59,7 +67,7 @@ export default function NewPayslipPage() {
       active = false;
       clearTimeout(timer);
     };
-  }, [router, employeeSearch]);
+  }, [router, employeeSearch, permissionsReady, allowed]);
 
   async function handleSubmit(values: PayslipFormValues) {
     const token = getAuthToken();
@@ -73,9 +81,7 @@ export default function NewPayslipPage() {
       const created = await createPayslip(token, {
         payroll_id: values.payrollId,
         basic_salary: values.basicSalary,
-        ...(values.overtime !== undefined
-          ? { overtime: values.overtime }
-          : {}),
+        ...(values.overtime !== undefined ? { overtime: values.overtime } : {}),
         ...(values.tax !== undefined ? { tax: values.tax } : {}),
         ...(values.bonus !== undefined ? { bonus: values.bonus } : {}),
         ...(values.deduction !== undefined
@@ -96,6 +102,25 @@ export default function NewPayslipPage() {
     } finally {
       setSaving(false);
     }
+  }
+
+  if (!permissionsReady) {
+    return <p className="text-sm text-gray-600">Loading...</p>;
+  }
+
+  if (!allowed) {
+    return (
+      <NoAccess
+        title="New payslip"
+        message={
+          !canManage
+            ? "You do not have access to create payslips."
+            : "You do not have access to the employee list needed for this form."
+        }
+        backHref="/dashboard/payslips"
+        backLabel="Back to payslips"
+      />
+    );
   }
 
   return (

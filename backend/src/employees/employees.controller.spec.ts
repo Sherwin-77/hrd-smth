@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AuthenticationGuard } from '@nestjs/authentication';
 import { EmployeesController } from './employees.controller.js';
 import { EmployeesService } from './employees.service.js';
+import { RbacService } from '#rbac/rbac.service.js';
 import { EmployeeSex } from './entities/employee.entity.js';
 import { vi } from 'vitest';
 
@@ -17,6 +18,10 @@ describe('EmployeesController', () => {
     restore: ReturnType<typeof vi.fn>;
     getSexes: ReturnType<typeof vi.fn>;
   };
+  let rbac: {
+    getEmployeeRoles: ReturnType<typeof vi.fn>;
+    setEmployeeRoles: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(async () => {
     service = {
@@ -29,10 +34,17 @@ describe('EmployeesController', () => {
       restore: vi.fn(),
       getSexes: vi.fn(),
     };
+    rbac = {
+      getEmployeeRoles: vi.fn(),
+      setEmployeeRoles: vi.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [EmployeesController],
-      providers: [{ provide: EmployeesService, useValue: service }],
+      providers: [
+        { provide: EmployeesService, useValue: service },
+        { provide: RbacService, useValue: rbac },
+      ],
     })
       .overrideGuard(AuthenticationGuard)
       .useValue({ canActivate: () => true })
@@ -100,5 +112,15 @@ describe('EmployeesController', () => {
     service.getSexes.mockReturnValue(sexes);
     expect(controller.getSexes()).toBe(sexes);
     expect(service.getSexes).toHaveBeenCalledWith();
+  });
+
+  it('findRoles/setRoles delegate to the rbac service', async () => {
+    const id = '0193e5e0-9f6a-7a1b-9c2d-4e5f6a7b8c9d';
+    rbac.getEmployeeRoles.mockResolvedValue([]);
+    rbac.setEmployeeRoles.mockResolvedValue([]);
+    await controller.findRoles(id);
+    await controller.setRoles(id, { roleIds: ['role-id'] });
+    expect(rbac.getEmployeeRoles).toHaveBeenCalledWith(id);
+    expect(rbac.setEmployeeRoles).toHaveBeenCalledWith(id, ['role-id']);
   });
 });

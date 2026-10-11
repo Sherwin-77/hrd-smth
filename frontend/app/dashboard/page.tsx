@@ -6,11 +6,13 @@ import { useRouter } from "next/navigation";
 import {
   clearAuthSession,
   getAuthToken,
+  isForbidden,
   listContracts,
   listEmployees,
   listPayrolls,
   listPayslips,
 } from "@/lib/api";
+import { can, hasAnyView, usePermissions } from "@/lib/permissions";
 
 interface OverviewStats {
   employeeTotal: number | null;
@@ -21,66 +23,91 @@ interface OverviewStats {
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { permissions, ready: permissionsReady } = usePermissions();
   const [stats, setStats] = useState<OverviewStats>({
     employeeTotal: null,
     payrollTotal: null,
     contractTotal: null,
     pendingPayslips: null,
   });
-  const [status, setStatus] = useState<"loading" | "ready" | "error">(
-    "loading",
-  );
-  const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<"loading" | "ready">("loading");
 
   useEffect(() => {
+    if (!permissionsReady) return;
     const token = getAuthToken();
     if (!token) {
       router.replace("/login");
       return;
     }
-    Promise.all([
-      listEmployees(token, { page: 1, limit: 1 }),
-      listPayrolls(token, { page: 1, limit: 1, status: "active" }),
-      listContracts(token, { page: 1, limit: 1, status: "pending" }),
-      listPayslips(token, { page: 1, limit: 1, status: "pending" }),
-    ])
+    const tasks: Promise<number | null>[] = [
+      can(permissions, "employees", "view")
+        ? listEmployees(token, { page: 1, limit: 1 }).then(
+            (r) => r.meta.total,
+            () => null,
+          )
+        : Promise.resolve(null),
+      can(permissions, "payrolls", "view")
+        ? listPayrolls(token, { page: 1, limit: 1, status: "active" }).then(
+            (r) => r.meta.total,
+            () => null,
+          )
+        : Promise.resolve(null),
+      can(permissions, "contracts", "view")
+        ? listContracts(token, { page: 1, limit: 1, status: "pending" }).then(
+            (r) => r.meta.total,
+            () => null,
+          )
+        : Promise.resolve(null),
+      can(permissions, "payslips", "view")
+        ? listPayslips(token, { page: 1, limit: 1, status: "pending" }).then(
+            (r) => r.meta.total,
+            () => null,
+          )
+        : Promise.resolve(null),
+    ];
+    let active = true;
+    Promise.all(tasks)
       .then(([employees, payrolls, contracts, pending]) => {
+        if (!active) return;
         setStats({
-          employeeTotal: employees.meta.total,
-          payrollTotal: payrolls.meta.total,
-          contractTotal: contracts.meta.total,
-          pendingPayslips: pending.meta.total,
+          employeeTotal: employees,
+          payrollTotal: payrolls,
+          contractTotal: contracts,
+          pendingPayslips: pending,
         });
         setStatus("ready");
       })
       .catch((err: unknown) => {
+        if (!active) return;
         if (err instanceof Error && err.message.includes("Session expired")) {
           clearAuthSession();
           router.replace("/login");
           return;
         }
-        setError(err instanceof Error ? err.message : "Could not load.");
-        setStatus("error");
+        if (!isForbidden(err)) {
+          setStatus("ready");
+        }
       });
-  }, [router]);
+    return () => {
+      active = false;
+    };
+  }, [router, permissions, permissionsReady]);
 
-  if (status === "loading") {
+  // Users with no view access anywhere land here from sign-in; send them
+  // to their profile instead of showing a dead-end "no access" page.
+  useEffect(() => {
+    if (permissionsReady && !hasAnyView(permissions)) {
+      router.replace("/profile");
+    }
+  }, [router, permissions, permissionsReady]);
+
+  if (status === "loading" || !permissionsReady || !hasAnyView(permissions)) {
     return <p className="text-sm text-gray-600">Loading...</p>;
-  }
-
-  if (status === "error") {
-    return (
-      <section className="rounded-lg border border-gray-200 bg-white p-6">
-        <h1 className="text-xl font-semibold text-gray-900">Overview</h1>
-        <p role="alert" className="mt-4 text-sm text-red-700">
-          {error ?? "Could not load the dashboard."}
-        </p>
-      </section>
-    );
   }
 
   const cards = [
     {
+      visible: can(permissions, "employees", "view"),
       label: "Employees",
       value: stats.employeeTotal === null ? "-" : String(stats.employeeTotal),
       hint: "Total employee records",
@@ -88,6 +115,7 @@ export default function DashboardPage() {
       linkText: "Browse all employees",
     },
     {
+      visible: can(permissions, "payrolls", "view"),
       label: "Payrolls",
       value: stats.payrollTotal === null ? "-" : String(stats.payrollTotal),
       hint: "Active payrolls",
@@ -95,6 +123,7 @@ export default function DashboardPage() {
       linkText: "Browse all payrolls",
     },
     {
+      visible: can(permissions, "contracts", "view"),
       label: "Pending Contracts",
       value: stats.contractTotal === null ? "-" : String(stats.contractTotal),
       hint: "Pending sign",
@@ -102,6 +131,7 @@ export default function DashboardPage() {
       linkText: "Browse all contracts",
     },
     {
+      visible: can(permissions, "payslips", "view"),
       label: "Payslips",
       value:
         stats.pendingPayslips === null ? "-" : String(stats.pendingPayslips),
@@ -109,7 +139,7 @@ export default function DashboardPage() {
       href: "/dashboard/payslips",
       linkText: "Browse all payslips",
     },
-  ];
+  ].filter((card) => card.visible);
 
   return (
     <div className="flex flex-col gap-6">

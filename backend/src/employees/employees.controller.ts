@@ -9,10 +9,12 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Put,
   Query,
   UseGuards,
 } from '@nestjs/common';
 import { AuthenticationGuard } from '@nestjs/authentication';
+import { Can } from '@nestjs/authorization';
 import { EmployeesService } from './employees.service.js';
 import { CreateEmployeeDto } from './dto/create-employee.dto.js';
 import { FindEmployeesQueryDto } from './dto/find-employees-query.dto.js';
@@ -24,13 +26,20 @@ import {
   PaginatedEmployeesResponseDto,
   PaginatedEmployeesWithPayrollResponseDto,
 } from './dto/paginated-employees-resource.dto.js';
+import { RbacPolicy } from '#rbac/rbac.policy.js';
+import { RbacService } from '#rbac/rbac.service.js';
+import { RoleResourceDto, SetEmployeeRolesDto } from '#rbac/dto/role.dto.js';
 
 @Controller('employees')
 @UseGuards(AuthenticationGuard)
 export class EmployeesController {
-  constructor(private readonly employeesService: EmployeesService) {}
+  constructor(
+    private readonly employeesService: EmployeesService,
+    private readonly rbac: RbacService,
+  ) {}
 
   @Post()
+  @Can(RbacPolicy, 'can', () => ['employees.manage'])
   create(
     @Body() createEmployeeDto: CreateEmployeeDto,
   ): Promise<EmployeeIndexResourceDto> {
@@ -38,6 +47,7 @@ export class EmployeesController {
   }
 
   @Get()
+  @Can(RbacPolicy, 'can', () => ['employees.view'])
   findAll(
     @Query() query: FindEmployeesQueryDto,
   ): Promise<PaginatedEmployeesResponseDto> {
@@ -45,6 +55,7 @@ export class EmployeesController {
   }
 
   @Get('with-active-payroll')
+  @Can(RbacPolicy, 'can', () => ['employees.view'])
   findAllWithActivePayroll(
     @Query() query: FindEmployeesQueryDto,
   ): Promise<PaginatedEmployeesWithPayrollResponseDto> {
@@ -52,11 +63,13 @@ export class EmployeesController {
   }
 
   @Get('sexes')
+  @Can(RbacPolicy, 'can', () => ['employees.view'])
   getSexes(): EnumResourceDto[] {
     return this.employeesService.getSexes();
   }
 
   @Get(':id')
+  @Can(RbacPolicy, 'can', () => ['employees.view'])
   findOne(
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<EmployeeDetailResourceDto> {
@@ -64,6 +77,7 @@ export class EmployeesController {
   }
 
   @Patch(':id')
+  @Can(RbacPolicy, 'can', () => ['employees.manage'])
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateEmployeeDto: UpdateEmployeeDto,
@@ -73,14 +87,33 @@ export class EmployeesController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @Can(RbacPolicy, 'can', () => ['employees.manage'])
   remove(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
     return this.employeesService.remove(id);
   }
 
   @Patch(':id/restore')
+  @Can(RbacPolicy, 'can', () => ['employees.manage'])
   restore(
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<EmployeeIndexResourceDto> {
     return this.employeesService.restore(id);
+  }
+
+  @Get(':id/roles')
+  @Can(RbacPolicy, 'can', () => ['roles.view'])
+  findRoles(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<RoleResourceDto[]> {
+    return this.rbac.getEmployeeRoles(id);
+  }
+
+  @Put(':id/roles')
+  @Can(RbacPolicy, 'can', () => ['roles.manage'])
+  setRoles(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: SetEmployeeRolesDto,
+  ): Promise<RoleResourceDto[]> {
+    return this.rbac.setEmployeeRoles(id, dto.roleIds);
   }
 }

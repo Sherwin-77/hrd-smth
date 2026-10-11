@@ -14,10 +14,15 @@ import {
 } from "@/lib/api";
 import { enumLabel, useEnumOptions } from "@/lib/use-enum-options";
 import ActionButtons from "@/components/shared/action-buttons";
+import NoAccess from "@/components/shared/no-access";
+import { can, usePermissions } from "@/lib/permissions";
 
 export default function PayrollDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const { permissions, ready: permissionsReady } = usePermissions();
+  const allowed = can(permissions, "payrolls", "view");
+  const canManage = can(permissions, "payrolls", "manage");
   const [payroll, setPayroll] = useState<PayrollSummary | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">(
     "loading",
@@ -25,9 +30,8 @@ export default function PayrollDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [actionPending, setActionPending] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
-  const { options: statusOptions, error: enumError } = useEnumOptions(
-    listPayrollStatuses,
-  );
+  const { options: statusOptions, error: enumError } =
+    useEnumOptions(listPayrollStatuses);
 
   useEffect(() => {
     if (enumError && enumError.includes("Session expired")) {
@@ -37,6 +41,8 @@ export default function PayrollDetailPage() {
   }, [router, enumError]);
 
   useEffect(() => {
+    if (!permissionsReady) return;
+    if (!allowed) return;
     const token = getAuthToken();
     if (!token) {
       router.replace("/login");
@@ -62,7 +68,7 @@ export default function PayrollDetailPage() {
     return () => {
       active = false;
     };
-  }, [router, params.id]);
+  }, [router, params.id, permissionsReady, allowed]);
 
   async function handleAction(link: ActionLink) {
     const token = getAuthToken();
@@ -94,8 +100,18 @@ export default function PayrollDetailPage() {
     }
   }
 
-  if (status === "loading") {
+  if (status === "loading" || !permissionsReady) {
     return <p className="text-sm text-gray-600">Loading...</p>;
+  }
+
+  if (permissionsReady && !allowed) {
+    return (
+      <NoAccess
+        title="Payroll"
+        backHref="/dashboard/payrolls"
+        backLabel="Back to payrolls"
+      />
+    );
   }
 
   if (status === "error" || !payroll) {
@@ -128,8 +144,10 @@ export default function PayrollDetailPage() {
           Back to payrolls
         </Link>
         <ActionButtons
-          actions={payroll.available_actions ?? []}
-          editHref={`/dashboard/payrolls/${params.id}/edit`}
+          actions={canManage ? (payroll.available_actions ?? []) : []}
+          editHref={
+            canManage ? `/dashboard/payrolls/${params.id}/edit` : undefined
+          }
           pendingId={actionPending}
           error={actionError}
           onAction={handleAction}

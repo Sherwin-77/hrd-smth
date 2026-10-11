@@ -54,22 +54,10 @@ export async function loginRequest(
     if (res.status === 401) {
       throw new Error(backendMessage(body, "Invalid email or password."));
     }
-    throw new Error(
-      backendMessage(body, "Sign in failed. Please try again."),
-    );
+    throw new Error(backendMessage(body, "Sign in failed. Please try again."));
   }
 
   return (await res.json()) as LoginResponse;
-}
-
-export async function fetchCurrentEmployee(token: string) {
-  const res = await fetch(`${API_BASE_URL}/auth/me`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!res.ok) {
-    throw new Error("Session expired. Please sign in again.");
-  }
-  return (await res.json()) as LoginEmployee;
 }
 
 export async function fetchCurrentEmployeeDetail(

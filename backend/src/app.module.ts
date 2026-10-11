@@ -2,6 +2,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AuthenticationModule } from '@nestjs/authentication';
+import { AuthorizationModule } from '@nestjs/authorization';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { EmployeesModule } from './employees/employees.module.js';
@@ -9,6 +10,7 @@ import { PayrollsModule } from './payrolls/payrolls.module.js';
 import { PayslipsModule } from './payslips/payslips.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { ContractsModule } from './contracts/contracts.module.js';
+import { RbacModule } from './rbac/rbac.module.js';
 
 function sessionAbsoluteTtl(): `${number}d` {
   const days = Number(process.env.SESSION_TTL_DAYS ?? '30');
@@ -27,6 +29,9 @@ function sessionAbsoluteTtl(): `${number}d` {
         idleTtl: 0,
       },
     }),
+    // Registered after the authentication module so its global guard runs
+    // after `AuthenticationGuard` has populated `request.user`.
+    AuthorizationModule.forRoot(),
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST || 'localhost',
@@ -42,6 +47,7 @@ function sessionAbsoluteTtl(): `${number}d` {
     PayrollsModule,
     PayslipsModule,
     ContractsModule,
+    RbacModule,
   ],
 })
 export class AppModule {}

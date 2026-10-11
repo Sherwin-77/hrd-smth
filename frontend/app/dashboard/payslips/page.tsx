@@ -11,11 +11,16 @@ import {
   type PayslipSummary,
 } from "@/lib/api";
 import { enumLabel, useEnumOptions } from "@/lib/use-enum-options";
+import NoAccess from "@/components/shared/no-access";
+import { can, usePermissions } from "@/lib/permissions";
 
 const PAGE_SIZE = 10;
 
 export default function PayslipsPage() {
   const router = useRouter();
+  const { permissions, ready: permissionsReady } = usePermissions();
+  const allowed = can(permissions, "payslips", "view");
+  const canManage = can(permissions, "payslips", "manage");
   const [rows, setRows] = useState<PayslipSummary[]>([]);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -40,6 +45,8 @@ export default function PayslipsPage() {
   }, [router, enumError]);
 
   useEffect(() => {
+    if (!permissionsReady) return;
+    if (!allowed) return;
     const token = getAuthToken();
     if (!token) {
       router.replace("/login");
@@ -71,7 +78,7 @@ export default function PayslipsPage() {
     return () => {
       active = false;
     };
-  }, [router, page, statusFilter]);
+  }, [router, page, statusFilter, permissionsReady, allowed]);
 
   function changePage(next: number) {
     if (next < 1 || (totalPages > 0 && next > totalPages)) return;
@@ -79,17 +86,29 @@ export default function PayslipsPage() {
     setPage(next);
   }
 
+  if (permissionsReady && !allowed) {
+    return (
+      <NoAccess
+        title="Payslips"
+        backHref="/dashboard"
+        backLabel="Back to overview"
+      />
+    );
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <section className="rounded-lg border border-gray-200 bg-white p-6">
         <div className="flex items-center justify-between gap-4">
           <h1 className="text-xl font-semibold text-gray-900">Payslips</h1>
-          <Link
-            href="/dashboard/payslips/new"
-            className="shrink-0 rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800"
-          >
-            Create payslip
-          </Link>
+          {canManage ? (
+            <Link
+              href="/dashboard/payslips/new"
+              className="shrink-0 rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800"
+            >
+              Create payslip
+            </Link>
+          ) : null}
         </div>
         <p className="mt-1 text-sm text-gray-600">
           {total} payslip{total === 1 ? "" : "s"} found.
@@ -195,13 +214,13 @@ export default function PayslipsPage() {
                   <td className="px-4 py-2 font-medium text-gray-900">
                     {new Date(row.date).toLocaleDateString()}
                   </td>
-                  <td className="px-4 py-2 text-gray-700">{row.basic_salary}</td>
+                  <td className="px-4 py-2 text-gray-700">
+                    {row.basic_salary}
+                  </td>
                   <td className="px-4 py-2 text-gray-700">{row.overtime}</td>
                   <td className="px-4 py-2 text-gray-700">{row.bonus}</td>
                   <td className="px-4 py-2 text-gray-700">{row.tax}</td>
-                  <td className="px-4 py-2 text-gray-700">
-                    {row.deduction}
-                  </td>
+                  <td className="px-4 py-2 text-gray-700">{row.deduction}</td>
                   <td className="px-4 py-2 font-medium text-gray-900">
                     {row.total}
                   </td>
@@ -241,7 +260,9 @@ export default function PayslipsPage() {
           <button
             type="button"
             onClick={() => changePage(page + 1)}
-            disabled={totalPages === 0 || page >= totalPages || status === "loading"}
+            disabled={
+              totalPages === 0 || page >= totalPages || status === "loading"
+            }
             className="rounded-md border border-gray-300 px-3 py-1 font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
           >
             Next

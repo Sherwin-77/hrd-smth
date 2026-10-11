@@ -15,6 +15,8 @@ import {
 } from "@/lib/api";
 import { enumLabel, useEnumOptions } from "@/lib/use-enum-options";
 import ActionButtons from "@/components/shared/action-buttons";
+import NoAccess from "@/components/shared/no-access";
+import { can, usePermissions } from "@/lib/permissions";
 
 function formatDate(value: string | null): string {
   if (!value) return "-";
@@ -24,6 +26,9 @@ function formatDate(value: string | null): string {
 export default function ContractDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const { permissions, ready: permissionsReady } = usePermissions();
+  const allowed = can(permissions, "contracts", "view");
+  const canManage = can(permissions, "contracts", "manage");
   const [contract, setContract] = useState<ContractSummary | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">(
     "loading",
@@ -48,6 +53,8 @@ export default function ContractDetailPage() {
   }, [router, statusEnumError, typeEnumError]);
 
   useEffect(() => {
+    if (!permissionsReady) return;
+    if (!allowed) return;
     const token = getAuthToken();
     if (!token) {
       router.replace("/login");
@@ -73,7 +80,7 @@ export default function ContractDetailPage() {
     return () => {
       active = false;
     };
-  }, [router, params.id]);
+  }, [router, params.id, permissionsReady, allowed]);
 
   async function handleAction(link: ActionLink) {
     const token = getAuthToken();
@@ -132,8 +139,18 @@ export default function ContractDetailPage() {
     }
   }
 
-  if (status === "loading") {
+  if (status === "loading" || !permissionsReady) {
     return <p className="text-sm text-gray-600">Loading...</p>;
+  }
+
+  if (permissionsReady && !allowed) {
+    return (
+      <NoAccess
+        title="Contract"
+        backHref="/dashboard/contracts"
+        backLabel="Back to contracts"
+      />
+    );
   }
 
   if (status === "error" || !contract) {
@@ -172,8 +189,10 @@ export default function ContractDetailPage() {
           Back to contracts
         </Link>
         <ActionButtons
-          actions={otherActions}
-          editHref={`/dashboard/contracts/${params.id}/edit`}
+          actions={canManage ? otherActions : []}
+          editHref={
+            canManage ? `/dashboard/contracts/${params.id}/edit` : undefined
+          }
           pendingId={actionPending}
           error={actionError}
           onAction={handleAction}
@@ -189,7 +208,7 @@ export default function ContractDetailPage() {
         </p>
       </section>
 
-      {signAction ? (
+      {canManage && signAction ? (
         <section
           aria-label="Sign contract"
           className="rounded-lg border border-gray-200 bg-white p-6"

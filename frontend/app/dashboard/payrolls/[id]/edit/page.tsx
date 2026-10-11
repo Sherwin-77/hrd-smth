@@ -13,10 +13,14 @@ import {
   getAuthToken,
   updatePayroll,
 } from "@/lib/api";
+import NoAccess from "@/components/shared/no-access";
+import { can, usePermissions } from "@/lib/permissions";
 
 export default function EditPayrollPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const { permissions, ready: permissionsReady } = usePermissions();
+  const allowed = can(permissions, "payrolls", "manage");
   const [initial, setInitial] = useState<PayrollFormValues | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">(
     "loading",
@@ -26,6 +30,8 @@ export default function EditPayrollPage() {
   const [serverError, setServerError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!permissionsReady) return;
+    if (!allowed) return;
     const token = getAuthToken();
     if (!token) {
       router.replace("/login");
@@ -56,7 +62,7 @@ export default function EditPayrollPage() {
     return () => {
       active = false;
     };
-  }, [router, params.id]);
+  }, [router, params.id, permissionsReady, allowed]);
 
   async function handleSubmit(values: PayrollFormValues) {
     const token = getAuthToken();
@@ -87,8 +93,18 @@ export default function EditPayrollPage() {
     }
   }
 
-  if (status === "loading") {
+  if (status === "loading" || !permissionsReady) {
     return <p className="text-sm text-gray-600">Loading...</p>;
+  }
+
+  if (permissionsReady && !allowed) {
+    return (
+      <NoAccess
+        title="Edit payroll"
+        backHref={`/dashboard/payrolls/${params.id}`}
+        backLabel="Back to detail"
+      />
+    );
   }
 
   if (status === "error" || !initial) {

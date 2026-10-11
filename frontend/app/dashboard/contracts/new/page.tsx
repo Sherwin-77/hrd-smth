@@ -15,9 +15,15 @@ import {
   listEmployees,
 } from "@/lib/api";
 import { useEnumOptions } from "@/lib/use-enum-options";
+import NoAccess from "@/components/shared/no-access";
+import { can, usePermissions } from "@/lib/permissions";
 
 export default function NewContractPage() {
   const router = useRouter();
+  const { permissions, ready: permissionsReady } = usePermissions();
+  const canManage = can(permissions, "contracts", "manage");
+  const canSeeEmployees = can(permissions, "employees", "view");
+  const allowed = canManage && canSeeEmployees;
   const [saving, setSaving] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [employeeSearch, setEmployeeSearch] = useState("");
@@ -40,6 +46,8 @@ export default function NewContractPage() {
   }, [router, typeError]);
 
   useEffect(() => {
+    if (!permissionsReady) return;
+    if (!allowed) return;
     const token = getAuthToken();
     if (!token) {
       router.replace("/login");
@@ -68,7 +76,7 @@ export default function NewContractPage() {
       active = false;
       clearTimeout(timer);
     };
-  }, [router, employeeSearch]);
+  }, [router, employeeSearch, permissionsReady, allowed]);
 
   async function handleSubmit(values: ContractFormValues) {
     const token = getAuthToken();
@@ -99,6 +107,25 @@ export default function NewContractPage() {
     } finally {
       setSaving(false);
     }
+  }
+
+  if (!permissionsReady) {
+    return <p className="text-sm text-gray-600">Loading...</p>;
+  }
+
+  if (!allowed) {
+    return (
+      <NoAccess
+        title="New contract"
+        message={
+          !canManage
+            ? "You do not have access to create contracts."
+            : "You do not have access to the employee list needed for this form."
+        }
+        backHref="/dashboard/contracts"
+        backLabel="Back to contracts"
+      />
+    );
   }
 
   return (
