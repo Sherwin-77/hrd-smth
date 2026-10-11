@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { SubmitEvent } from "react";
 import Link from "next/link";
+import FormSelect from "@/components/shared/form-select";
 import type { EnumOption } from "@/lib/api/types";
 import type { EnumFetchStatus } from "@/lib/use-enum-options";
 
@@ -210,14 +211,13 @@ export default function EmployeeForm({
       </Field>
 
       <Field id="employee-sex" label="Sex">
-        <select
+        <FormSelect
           id="employee-sex"
           name="sex"
           required
           disabled={sexStatus !== "ready"}
           value={sex}
-          onChange={(event) => setSex(event.target.value)}
-          className={inputClassName}
+          onChange={setSex}
         >
           {sexStatus !== "ready" ? (
             <option value="">
@@ -233,7 +233,7 @@ export default function EmployeeForm({
               ))}
             </>
           )}
-        </select>
+        </FormSelect>
         {sexStatus === "error" ? (
           <p role="alert" className="mt-1 text-xs text-red-700">
             {sexError ?? "Could not load sex options."}{" "}

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { SubmitEvent } from "react";
 import Link from "next/link";
+import EmployeeCombobox from "@/components/shared/employee-combobox";
 import {
   getAuthToken,
   simulatePayslip,
@@ -256,36 +257,23 @@ export default function PayslipForm({
 
       {mode === "create" ? (
         <Field id="payslip-employee" label="Employee">
-          <input
-            id="payslip-employee-search"
-            type="search"
-            value={employeeSearch ?? ""}
-            onChange={(event) => onEmployeeSearchChange?.(event.target.value)}
-            placeholder="Search employees"
-            className={inputClassName}
-          />
-          <select
+          <EmployeeCombobox
             id="payslip-employee"
-            name="employeeId"
-            required
             value={employeeId}
-            onChange={(event) => setEmployeeId(event.target.value)}
-            className={`${inputClassName} mt-2`}
-          >
-            <option value="">
-              {searchingEmployees ? "Searching..." : "Select an employee"}
-            </option>
-            {(employeeOptions ?? []).map((option) => (
-              <option
-                key={option.employeeId}
-                value={option.employeeId}
-                disabled={!option.payrollId}
-              >
-                {option.employeeName} ({option.employeeEmail})
-                {option.payrollId ? "" : " - no active payroll"}
-              </option>
-            ))}
-          </select>
+            onChange={setEmployeeId}
+            options={(employeeOptions ?? []).map((option) => ({
+              value: option.employeeId,
+              name: option.employeeName,
+              email: option.employeeEmail,
+              disabled: !option.payrollId,
+              disabledReason: option.payrollId
+                ? undefined
+                : "- no active payroll",
+            }))}
+            search={employeeSearch ?? ""}
+            onSearchChange={onEmployeeSearchChange ?? (() => {})}
+            searching={searchingEmployees ?? false}
+          />
           {selected?.payrollId ? (
             <p className="mt-1 text-xs text-gray-600">
               Payroll: {selected.accountName} ({selected.accountNumber})

@@ -11,6 +11,7 @@ import {
   type PayslipSummary,
 } from "@/lib/api";
 import { enumLabel, useEnumOptions } from "@/lib/use-enum-options";
+import FormSelect from "@/components/shared/form-select";
 import NoAccess from "@/components/shared/no-access";
 import { can, usePermissions } from "@/lib/permissions";
 
@@ -120,16 +121,16 @@ export default function PayslipsPage() {
           <label htmlFor="payslip-status" className="sr-only">
             Filter by status
           </label>
-          <select
+          <FormSelect
             id="payslip-status"
             value={statusFilter}
             disabled={enumStatus !== "ready"}
-            onChange={(event) => {
+            onChange={(next) => {
               setStatus("loading");
               setPage(1);
-              setStatusFilter(event.target.value);
+              setStatusFilter(next);
             }}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-blue-700 focus:outline-none disabled:opacity-60"
+            variant="filter"
           >
             {enumStatus !== "ready" ? (
               <option value="">
@@ -147,7 +148,7 @@ export default function PayslipsPage() {
                 ))}
               </>
             )}
-          </select>
+          </FormSelect>
           {enumStatus === "error" ? (
             <p role="alert" className="text-sm text-red-700">
               {enumError ?? "Could not load statuses."}{" "}

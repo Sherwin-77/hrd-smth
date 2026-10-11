@@ -12,6 +12,7 @@ import {
   type ContractSummary,
 } from "@/lib/api";
 import { enumLabel, useEnumOptions } from "@/lib/use-enum-options";
+import FormSelect from "@/components/shared/form-select";
 import NoAccess from "@/components/shared/no-access";
 import { can, usePermissions } from "@/lib/permissions";
 
@@ -41,12 +42,12 @@ function FilterSelect({
       <label htmlFor={id} className="sr-only">
         {label}
       </label>
-      <select
+      <FormSelect
         id={id}
         value={value}
         disabled={enumStatus !== "ready"}
-        onChange={(event) => onChange(event.target.value)}
-        className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-blue-700 focus:outline-none disabled:opacity-60"
+        onChange={onChange}
+        variant="filter"
       >
         {enumStatus !== "ready" ? (
           <option value="">
@@ -62,7 +63,7 @@ function FilterSelect({
             ))}
           </>
         )}
-      </select>
+      </FormSelect>
       {enumStatus === "error" ? (
         <p role="alert" className="text-sm text-red-700">
           {enumError ?? "Could not load options."}{" "}

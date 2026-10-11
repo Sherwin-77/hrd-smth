@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { SubmitEvent } from "react";
 import Link from "next/link";
+import EmployeeCombobox from "@/components/shared/employee-combobox";
 
 export interface PayrollEmployeeOption {
   id: string;
@@ -128,31 +129,19 @@ export default function PayrollForm({
 
       {mode === "create" ? (
         <Field id="payroll-employee" label="Employee">
-          <input
-            id="payroll-employee-search"
-            type="search"
-            value={employeeSearch ?? ""}
-            onChange={(event) => onEmployeeSearchChange?.(event.target.value)}
-            placeholder="Search employees"
-            className={inputClassName}
-          />
-          <select
+          <EmployeeCombobox
             id="payroll-employee"
-            name="employeeId"
-            required
             value={employeeId}
-            onChange={(event) => setEmployeeId(event.target.value)}
-            className={`${inputClassName} mt-2`}
-          >
-            <option value="">
-              {searchingEmployees ? "Searching..." : "Select an employee"}
-            </option>
-            {(employeeOptions ?? []).map((option) => (
-              <option key={option.id} value={option.id}>
-                {option.name} ({option.email})
-              </option>
-            ))}
-          </select>
+            onChange={setEmployeeId}
+            options={(employeeOptions ?? []).map((option) => ({
+              value: option.id,
+              name: option.name,
+              email: option.email,
+            }))}
+            search={employeeSearch ?? ""}
+            onSearchChange={onEmployeeSearchChange ?? (() => {})}
+            searching={searchingEmployees ?? false}
+          />
         </Field>
       ) : null}
 

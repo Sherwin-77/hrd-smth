@@ -3,6 +3,8 @@
 import { useState } from "react";
 import type { SubmitEvent } from "react";
 import Link from "next/link";
+import EmployeeCombobox from "@/components/shared/employee-combobox";
+import FormSelect from "@/components/shared/form-select";
 import type { EnumOption } from "@/lib/api/types";
 import type { EnumFetchStatus } from "@/lib/use-enum-options";
 
@@ -138,43 +140,30 @@ export default function ContractForm({
 
       {mode === "create" ? (
         <Field id="contract-employee" label="Employee">
-          <input
-            id="contract-employee-search"
-            type="search"
-            value={employeeSearch ?? ""}
-            onChange={(event) => onEmployeeSearchChange?.(event.target.value)}
-            placeholder="Search employees"
-            className={inputClassName}
-          />
-          <select
+          <EmployeeCombobox
             id="contract-employee"
-            name="employeeId"
-            required
             value={employeeId}
-            onChange={(event) => setEmployeeId(event.target.value)}
-            className={`${inputClassName} mt-2`}
-          >
-            <option value="">
-              {searchingEmployees ? "Searching..." : "Select an employee"}
-            </option>
-            {(employeeOptions ?? []).map((option) => (
-              <option key={option.id} value={option.id}>
-                {option.name} ({option.email})
-              </option>
-            ))}
-          </select>
+            onChange={setEmployeeId}
+            options={(employeeOptions ?? []).map((option) => ({
+              value: option.id,
+              name: option.name,
+              email: option.email,
+            }))}
+            search={employeeSearch ?? ""}
+            onSearchChange={onEmployeeSearchChange ?? (() => {})}
+            searching={searchingEmployees ?? false}
+          />
         </Field>
       ) : null}
 
       <Field id="contract-type" label="Type">
-        <select
+        <FormSelect
           id="contract-type"
           name="type"
           required
           disabled={typeStatus !== "ready"}
           value={type}
-          onChange={(event) => setType(event.target.value)}
-          className={inputClassName}
+          onChange={setType}
         >
           {typeStatus !== "ready" ? (
             <option value="">
@@ -192,7 +181,7 @@ export default function ContractForm({
               ))}
             </>
           )}
-        </select>
+        </FormSelect>
         {typeStatus === "error" ? (
           <p role="alert" className="mt-1 text-xs text-red-700">
             {typeError ?? "Could not load contract types."}{" "}
