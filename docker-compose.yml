@@ -2,10 +2,8 @@ services:
   db:
     image: postgres:18-alpine
     container_name: app_database
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: secret
-      POSTGRES_DB: hrd
+    env_file:
+      - backend/.env
     ports:
       - "5432:5432"
     volumes:
@@ -16,6 +14,21 @@ services:
       timeout: 5s
       retries: 5
 
+  migration:
+    build:
+      context: ./backend
+    container_name: app_migration
+    command: >
+      sh -c "
+        echo 'Running migrations...' &&
+        npm run migrate:up
+      "
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - backend/.env
+
   backend:
     build:
       context: ./backend
@@ -23,15 +36,21 @@ services:
     ports:
       - "3001:3001"
     depends_on:
-      db:
-        condition: service_healthy
+      migration:
+        condition: service_completed_successfully
+    env_file:
+      - backend/.env
 
   frontend:
     build:
       context: ./frontend
+      args:
+        - NEXT_PUBLIC_API_URL=http://localhost:3001 
     container_name: app_frontend
     ports:
       - "3000:3000"
+    environment:
+      - INTERNAL_API_URL=http://backend:3001
     depends_on:
       - backend
 
