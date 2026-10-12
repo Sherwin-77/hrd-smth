@@ -1,4 +1,9 @@
-import { apiFetch, toQueryString } from "./client";
+import {
+  apiDownload,
+  apiFetch,
+  toQueryString,
+  type DownloadedFile,
+} from "./client";
 import type {
   ActionLink,
   EmployeeBrief,
@@ -53,6 +58,17 @@ export async function listContractStatuses(
     token,
     undefined,
     "Could not load contract statuses.",
+  );
+}
+
+export async function exportContracts(
+  token: string,
+  query: Pick<ListQuery, "search" | "status" | "type">,
+): Promise<DownloadedFile> {
+  return apiDownload(
+    `/contracts/export${toQueryString(query)}`,
+    token,
+    "Could not export contracts.",
   );
 }
 

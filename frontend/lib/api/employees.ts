@@ -1,4 +1,9 @@
-import { apiFetch, toQueryString } from "./client";
+import {
+  apiDownload,
+  apiFetch,
+  toQueryString,
+  type DownloadedFile,
+} from "./client";
 import type { EnumOption, ListQuery, Paginated } from "./types";
 import type { ContractSummary } from "./contracts";
 import type { PayrollSummary } from "./payrolls";
@@ -83,6 +88,17 @@ export async function listEmployees(
     token,
     undefined,
     "Could not load employees.",
+  );
+}
+
+export async function exportEmployees(
+  token: string,
+  query: Pick<ListQuery, "search">,
+): Promise<DownloadedFile> {
+  return apiDownload(
+    `/employees/export${toQueryString(query)}`,
+    token,
+    "Could not export employees.",
   );
 }
 

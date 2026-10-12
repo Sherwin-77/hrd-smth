@@ -86,6 +86,66 @@ export function toQueryString(query: ListQuery): string {
   return text ? `?${text}` : "";
 }
 
+export interface DownloadedFile {
+  blob: Blob;
+  filename: string | null;
+}
+
+function filenameFromDisposition(value: string | null): string | null {
+  if (!value) return null;
+  const match = /filename="?([^";]+)"?/.exec(value);
+  return match ? match[1] : null;
+}
+
+/** Download a binary response (Excel export) with auth handling. */
+export async function apiDownload(
+  path: string,
+  token: string,
+  fallback = "Request failed. Please try again.",
+): Promise<DownloadedFile> {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!res.ok) {
+    let body: BackendErrorBody | null = null;
+    try {
+      body = (await res.json()) as BackendErrorBody;
+    } catch {
+      body = null;
+    }
+    if (res.status === 401) {
+      throw new Error("Session expired. Please sign in again.");
+    }
+    if (res.status === 403) {
+      throw new ForbiddenError(
+        body && typeof body.message === "string" && body.message.length > 0
+          ? body.message
+          : undefined,
+      );
+    }
+    throw new Error(backendMessage(body, fallback));
+  }
+  const blob = await res.blob();
+  return {
+    blob,
+    filename: filenameFromDisposition(res.headers.get("content-disposition")),
+  };
+}
+
+/** Trigger a browser download for a previously fetched blob. */
+export function saveDownloadedFile(file: DownloadedFile, fallbackName: string) {
+  const url = URL.createObjectURL(file.blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = file.filename ?? fallbackName;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
 export async function executeAction<T>(
   token: string,
   link: ActionLink,

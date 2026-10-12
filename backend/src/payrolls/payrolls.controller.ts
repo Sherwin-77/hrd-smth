@@ -10,6 +10,7 @@ import {
   Patch,
   Post,
   Query,
+  StreamableFile,
   UseGuards,
 } from '@nestjs/common';
 import { AuthenticationGuard } from '@nestjs/authentication';
@@ -22,6 +23,10 @@ import { PayrollResourceDto } from './dto/payroll-resource.dto.js';
 import { PaginatedPayrollsResponseDto } from './dto/paginated-payrolls-resource.dto.js';
 import { EnumResourceDto } from '#common/dto/enum-resource.dto.js';
 import { RbacPolicy } from '#rbac/rbac.policy.js';
+import {
+  EXCEL_MIME_TYPE,
+  exportFilename,
+} from '#common/excel/excel-export.helper.js';
 
 @Controller('payrolls')
 @UseGuards(AuthenticationGuard)
@@ -48,6 +53,18 @@ export class PayrollsController {
   @Can(RbacPolicy, 'can', () => ['payrolls.view'])
   getStatuses(): EnumResourceDto[] {
     return this.payrollsService.getStatuses();
+  }
+
+  @Get('export')
+  @Can(RbacPolicy, 'can', () => ['payrolls.view'])
+  async export(
+    @Query() query: FindPayrollsQueryDto,
+  ): Promise<StreamableFile> {
+    const buffer = await this.payrollsService.exportToExcel(query);
+    return new StreamableFile(buffer, {
+      type: EXCEL_MIME_TYPE,
+      disposition: `attachment; filename="${exportFilename('payrolls')}"`,
+    });
   }
 
   @Get(':id')

@@ -6,10 +6,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   clearAuthSession,
+  exportContracts,
   getAuthToken,
   listContracts,
   listContractStatuses,
   listContractTypes,
+  saveDownloadedFile,
   type ContractSummary,
 } from "@/lib/api";
 import { enumLabel, useEnumOptions } from "@/lib/use-enum-options";
@@ -103,6 +105,8 @@ export default function ContractsPage() {
     "loading",
   );
   const [error, setError] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
   const {
     options: statusOptions,
     status: statusEnumStatus,
@@ -185,6 +189,33 @@ export default function ContractsPage() {
     setPage(next);
   }
 
+  async function handleExport() {
+    const token = getAuthToken();
+    if (!token) {
+      router.replace("/login");
+      return;
+    }
+    setExporting(true);
+    setExportError(null);
+    try {
+      const file = await exportContracts(token, {
+        search,
+        status: statusFilter || undefined,
+        type: typeFilter || undefined,
+      });
+      saveDownloadedFile(file, "contracts.xlsx");
+    } catch (err: unknown) {
+      if (err instanceof Error && err.message.includes("Session expired")) {
+        clearAuthSession();
+        router.replace("/login");
+        return;
+      }
+      setExportError(err instanceof Error ? err.message : "Could not export.");
+    } finally {
+      setExporting(false);
+    }
+  }
+
   if (permissionsReady && !allowed) {
     return (
       <NoAccess
@@ -252,6 +283,26 @@ export default function ContractsPage() {
             enumError={typeEnumError}
             retry={retryTypeEnum}
           />
+        </div>
+        <div className="mt-3 flex flex-col gap-1">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleExport}
+              disabled={exporting}
+              className="shrink-0 rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            >
+              {exporting ? "Exporting..." : "Export Excel"}
+            </button>
+            <p className="text-xs text-gray-500">
+              Exports up to 1000 rows matching current filters.
+            </p>
+          </div>
+          {exportError ? (
+            <p role="alert" className="text-sm text-red-700">
+              {exportError}
+            </p>
+          ) : null}
         </div>
       </section>
 

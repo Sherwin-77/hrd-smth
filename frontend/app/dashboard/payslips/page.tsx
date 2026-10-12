@@ -6,9 +6,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   clearAuthSession,
+  exportPayslips,
   getAuthToken,
   listPayslips,
   listPayslipStatuses,
+  saveDownloadedFile,
   type PayslipSummary,
 } from "@/lib/api";
 import { enumLabel, useEnumOptions } from "@/lib/use-enum-options";
@@ -34,6 +36,8 @@ export default function PayslipsPage() {
     "loading",
   );
   const [error, setError] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
   const {
     options: statusOptions,
     status: enumStatus,
@@ -97,6 +101,32 @@ export default function PayslipsPage() {
     if (next < 1 || (totalPages > 0 && next > totalPages)) return;
     setStatus("loading");
     setPage(next);
+  }
+
+  async function handleExport() {
+    const token = getAuthToken();
+    if (!token) {
+      router.replace("/login");
+      return;
+    }
+    setExporting(true);
+    setExportError(null);
+    try {
+      const file = await exportPayslips(token, {
+        search,
+        status: statusFilter || undefined,
+      });
+      saveDownloadedFile(file, "payslips.xlsx");
+    } catch (err: unknown) {
+      if (err instanceof Error && err.message.includes("Session expired")) {
+        clearAuthSession();
+        router.replace("/login");
+        return;
+      }
+      setExportError(err instanceof Error ? err.message : "Could not export.");
+    } finally {
+      setExporting(false);
+    }
   }
 
   if (permissionsReady && !allowed) {
@@ -191,6 +221,26 @@ export default function PayslipsPage() {
             Search
           </button>
         </form>
+        <div className="mt-3 flex flex-col gap-1">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleExport}
+              disabled={exporting}
+              className="shrink-0 rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            >
+              {exporting ? "Exporting..." : "Export Excel"}
+            </button>
+            <p className="text-xs text-gray-500">
+              Exports up to 1000 rows matching current filters.
+            </p>
+          </div>
+          {exportError ? (
+            <p role="alert" className="text-sm text-red-700">
+              {exportError}
+            </p>
+          ) : null}
+        </div>
       </section>
 
       <section

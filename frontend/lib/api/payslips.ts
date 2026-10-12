@@ -1,4 +1,9 @@
-import { apiFetch, toQueryString } from "./client";
+import {
+  apiDownload,
+  apiFetch,
+  toQueryString,
+  type DownloadedFile,
+} from "./client";
 import type {
   ActionLink,
   EmployeeBrief,
@@ -45,6 +50,17 @@ export async function listPayslipStatuses(
     token,
     undefined,
     "Could not load payslip statuses.",
+  );
+}
+
+export async function exportPayslips(
+  token: string,
+  query: Pick<ListQuery, "search" | "status">,
+): Promise<DownloadedFile> {
+  return apiDownload(
+    `/payslips/export${toQueryString(query)}`,
+    token,
+    "Could not export payslips.",
   );
 }
 

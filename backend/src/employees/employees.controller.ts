@@ -11,6 +11,7 @@ import {
   Post,
   Put,
   Query,
+  StreamableFile,
   UseGuards,
 } from '@nestjs/common';
 import { AuthenticationGuard } from '@nestjs/authentication';
@@ -29,6 +30,10 @@ import {
 import { RbacPolicy } from '#rbac/rbac.policy.js';
 import { RbacService } from '#rbac/rbac.service.js';
 import { RoleResourceDto, SetEmployeeRolesDto } from '#rbac/dto/role.dto.js';
+import {
+  EXCEL_MIME_TYPE,
+  exportFilename,
+} from '#common/excel/excel-export.helper.js';
 
 @Controller('employees')
 @UseGuards(AuthenticationGuard)
@@ -66,6 +71,18 @@ export class EmployeesController {
   @Can(RbacPolicy, 'can', () => ['employees.view'])
   getSexes(): EnumResourceDto[] {
     return this.employeesService.getSexes();
+  }
+
+  @Get('export')
+  @Can(RbacPolicy, 'can', () => ['employees.view'])
+  async export(
+    @Query() query: FindEmployeesQueryDto,
+  ): Promise<StreamableFile> {
+    const buffer = await this.employeesService.exportToExcel(query);
+    return new StreamableFile(buffer, {
+      type: EXCEL_MIME_TYPE,
+      disposition: `attachment; filename="${exportFilename('employees')}"`,
+    });
   }
 
   @Get(':id')

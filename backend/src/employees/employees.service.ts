@@ -17,10 +17,16 @@ import {
   PaginatedEmployeesWithPayrollResponseDto,
 } from './dto/paginated-employees-resource.dto.js';
 import { PaginationMetaDto } from '#common/dto/pagination.dto.js';
+import {
+  EXPORT_ROW_LIMIT,
+  buildExcelBuffer,
+  toExcelDate,
+  type ExcelCellValue,
+} from '#common/excel/excel-export.helper.js';
 import { EnumResourceDto } from '#common/dto/enum-resource.dto.js';
 import { EmployeesRepository } from './employees.repository.js';
 import { Employee, EmployeeSex } from './entities/employee.entity.js';
-import { Brackets } from 'typeorm';
+import { Brackets, type SelectQueryBuilder } from 'typeorm';
 import { v7 as uuidv7 } from 'uuid';
 
 export interface PaginatedEmployees {
@@ -50,6 +56,19 @@ const EMPLOYEE_SORT_COLUMNS: Record<EmployeeSortField, string> = {
   join_at: 'joinAt',
   created_at: 'createdAt',
 };
+
+export const EMPLOYEE_EXPORT_HEADERS = ['Name', 'Email', 'Phone', 'Joined'];
+
+export function mapEmployeeToExportRow(
+  employee: Employee,
+): ExcelCellValue[] {
+  return [
+    employee.name,
+    employee.email,
+    employee.phoneNumber,
+    toExcelDate(employee.joinAt),
+  ];
+}
 
 @Injectable()
 export class EmployeesService {
@@ -95,19 +114,7 @@ export class EmployeesService {
     const sortBy = EMPLOYEE_SORT_COLUMNS[query.sortBy ?? 'name'];
     const order = query.order ?? 'DESC';
 
-    const search = query.search?.trim();
-
-    const queryBuilder = this.employees.createQueryBuilder('employee');
-
-    if (search) {
-      queryBuilder.where(
-        new Brackets((qb) => {
-          qb.where('employee.name ILIKE :search', {
-            search: `%${search}%`,
-          }).orWhere('employee.email ILIKE :search', { search: `%${search}%` });
-        }),
-      );
-    }
+    const queryBuilder = this.buildListQuery(query);
 
     queryBuilder
       .orderBy(`employee.${sortBy}`, order)
@@ -122,6 +129,26 @@ export class EmployeesService {
     );
     response.meta = PaginationMetaDto.fromTotal(total, page, limit);
     return response;
+  }
+
+  /**
+   * Export matching the list filters (`page`/`limit` ignored),
+   * capped at `EXPORT_ROW_LIMIT` rows.
+   */
+  async exportToExcel(query: FindEmployeesQueryDto): Promise<Buffer> {
+    const sortBy = EMPLOYEE_SORT_COLUMNS[query.sortBy ?? 'name'];
+    const order = query.order ?? 'DESC';
+
+    const employees = await this.buildListQuery(query)
+      .orderBy(`employee.${sortBy}`, order)
+      .take(EXPORT_ROW_LIMIT)
+      .getMany();
+
+    return buildExcelBuffer(
+      EMPLOYEE_EXPORT_HEADERS,
+      employees.map(mapEmployeeToExportRow),
+      'Employees',
+    );
   }
 
   async findOne(id: string): Promise<EmployeeDetailResourceDto> {
@@ -244,6 +271,25 @@ export class EmployeesService {
     }
     const recovered = await this.employees.recover(employee);
     return EmployeeIndexResourceDto.fromEntity(recovered);
+  }
+
+  private buildListQuery(
+    query: FindEmployeesQueryDto,
+  ): SelectQueryBuilder<Employee> {
+    const search = query.search?.trim();
+    const queryBuilder = this.employees.createQueryBuilder('employee');
+
+    if (search) {
+      queryBuilder.where(
+        new Brackets((qb) => {
+          qb.where('employee.name ILIKE :search', {
+            search: `%${search}%`,
+          }).orWhere('employee.email ILIKE :search', { search: `%${search}%` });
+        }),
+      );
+    }
+
+    return queryBuilder;
   }
 
   private async findOneEntityOrFail(id: string): Promise<Employee> {

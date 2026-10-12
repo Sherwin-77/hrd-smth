@@ -6,8 +6,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   clearAuthSession,
+  exportEmployees,
   getAuthToken,
   listEmployees,
+  saveDownloadedFile,
   type EmployeeIndex,
 } from "@/lib/api";
 import NoAccess from "@/components/shared/no-access";
@@ -30,6 +32,8 @@ export default function EmployeesPage() {
     "loading",
   );
   const [error, setError] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!permissionsReady) return;
@@ -81,6 +85,29 @@ export default function EmployeesPage() {
     setPage(next);
   }
 
+  async function handleExport() {
+    const token = getAuthToken();
+    if (!token) {
+      router.replace("/login");
+      return;
+    }
+    setExporting(true);
+    setExportError(null);
+    try {
+      const file = await exportEmployees(token, { search });
+      saveDownloadedFile(file, "employees.xlsx");
+    } catch (err: unknown) {
+      if (err instanceof Error && err.message.includes("Session expired")) {
+        clearAuthSession();
+        router.replace("/login");
+        return;
+      }
+      setExportError(err instanceof Error ? err.message : "Could not export.");
+    } finally {
+      setExporting(false);
+    }
+  }
+
   if (permissionsReady && !allowed) {
     return (
       <NoAccess
@@ -127,6 +154,26 @@ export default function EmployeesPage() {
             Search
           </button>
         </form>
+        <div className="mt-3 flex flex-col gap-1">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleExport}
+              disabled={exporting}
+              className="shrink-0 rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            >
+              {exporting ? "Exporting..." : "Export Excel"}
+            </button>
+            <p className="text-xs text-gray-500">
+              Exports up to 1000 rows matching current filters.
+            </p>
+          </div>
+          {exportError ? (
+            <p role="alert" className="text-sm text-red-700">
+              {exportError}
+            </p>
+          ) : null}
+        </div>
       </section>
 
       <section

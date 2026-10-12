@@ -10,6 +10,7 @@ import {
   Patch,
   Post,
   Query,
+  StreamableFile,
   UseGuards,
 } from '@nestjs/common';
 import { AuthenticationGuard } from '@nestjs/authentication';
@@ -23,6 +24,10 @@ import { ContractResourceDto } from './dto/contract-resource.dto.js';
 import { PaginatedContractsResponseDto } from './dto/paginated-contracts-resource.dto.js';
 import { EnumResourceDto } from '#common/dto/enum-resource.dto.js';
 import { RbacPolicy } from '#rbac/rbac.policy.js';
+import {
+  EXCEL_MIME_TYPE,
+  exportFilename,
+} from '#common/excel/excel-export.helper.js';
 
 @Controller('contracts')
 @UseGuards(AuthenticationGuard)
@@ -55,6 +60,18 @@ export class ContractsController {
   @Can(RbacPolicy, 'can', () => ['contracts.view'])
   getStatuses(): EnumResourceDto[] {
     return this.contractsService.getStatuses();
+  }
+
+  @Get('export')
+  @Can(RbacPolicy, 'can', () => ['contracts.view'])
+  async export(
+    @Query() query: FindContractsQueryDto,
+  ): Promise<StreamableFile> {
+    const buffer = await this.contractsService.exportToExcel(query);
+    return new StreamableFile(buffer, {
+      type: EXCEL_MIME_TYPE,
+      disposition: `attachment; filename="${exportFilename('contracts')}"`,
+    });
   }
 
   @Get(':id')

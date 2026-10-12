@@ -10,6 +10,7 @@ import {
   Patch,
   Post,
   Query,
+  StreamableFile,
   UseGuards,
 } from '@nestjs/common';
 import { AuthenticationGuard } from '@nestjs/authentication';
@@ -24,6 +25,10 @@ import { SimulatePayslipDto } from './dto/simulate-payslip.dto.js';
 import { PaginatedPayslipsResponseDto } from './dto/paginated-payslips-resource.dto.js';
 import { EnumResourceDto } from '#common/dto/enum-resource.dto.js';
 import { RbacPolicy } from '#rbac/rbac.policy.js';
+import {
+  EXCEL_MIME_TYPE,
+  exportFilename,
+} from '#common/excel/excel-export.helper.js';
 
 @Controller('payslips')
 @UseGuards(AuthenticationGuard)
@@ -59,6 +64,18 @@ export class PayslipsController {
   @Can(RbacPolicy, 'can', () => ['payslips.view'])
   getStatuses(): EnumResourceDto[] {
     return this.payslipsService.getStatuses();
+  }
+
+  @Get('export')
+  @Can(RbacPolicy, 'can', () => ['payslips.view'])
+  async export(
+    @Query() query: FindPayslipsQueryDto,
+  ): Promise<StreamableFile> {
+    const buffer = await this.payslipsService.exportToExcel(query);
+    return new StreamableFile(buffer, {
+      type: EXCEL_MIME_TYPE,
+      disposition: `attachment; filename="${exportFilename('payslips')}"`,
+    });
   }
 
   @Get(':id')

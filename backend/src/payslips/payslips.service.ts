@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, Repository } from 'typeorm';
+import { Brackets, Repository, type SelectQueryBuilder } from 'typeorm';
 import { CreatePayslipDto } from './dto/create-payslip.dto.js';
 import {
   FindPayslipsQueryDto,
@@ -19,6 +19,12 @@ import { SimulatePayslipDto } from './dto/simulate-payslip.dto.js';
 import { PaginatedPayslipsResponseDto } from './dto/paginated-payslips-resource.dto.js';
 import { PaginationMetaDto } from '#common/dto/pagination.dto.js';
 import { EnumResourceDto } from '#common/dto/enum-resource.dto.js';
+import {
+  EXPORT_ROW_LIMIT,
+  buildExcelBuffer,
+  toExcelDate,
+  type ExcelCellValue,
+} from '#common/excel/excel-export.helper.js';
 import { assertPayslipAction, PayslipAction } from './payslip.workflow.js';
 import { v7 as uuidv7 } from 'uuid';
 
@@ -40,6 +46,34 @@ const PAYSLIP_SORT_COLUMNS: Record<PayslipSortField, string> = {
   created_at: 'createdAt',
   updated_at: 'updatedAt',
 };
+
+export const PAYSLIP_EXPORT_HEADERS = [
+  'Employee Name',
+  'Employee Email',
+  'Date',
+  'Basic Salary',
+  'Overtime',
+  'Bonus',
+  'Tax',
+  'Deduction',
+  'Net',
+  'Status',
+];
+
+export function mapPayslipToExportRow(payslip: Payslip): ExcelCellValue[] {
+  return [
+    payslip.employee?.name ?? null,
+    payslip.employee?.email ?? null,
+    toExcelDate(payslip.date),
+    Number(payslip.basicSalary),
+    Number(payslip.overtime),
+    Number(payslip.bonus),
+    Number(payslip.tax),
+    Number(payslip.deduction),
+    Number(payslip.total),
+    payslip.status,
+  ];
+}
 
 @Injectable()
 export class PayslipsService {
@@ -95,49 +129,8 @@ export class PayslipsService {
     const limit = query.limit ?? 10;
     const sortBy = PAYSLIP_SORT_COLUMNS[query.sortBy ?? 'date'];
     const order = query.order ?? 'DESC';
-    const search = query.search?.trim();
 
-    const queryBuilder = this.payslips.createQueryBuilder('payslip');
-    queryBuilder
-      .leftJoinAndSelect('payslip.employee', 'employee')
-      .leftJoin('payslip.payroll', 'payroll');
-
-    if (query.employeeId) {
-      queryBuilder.andWhere('payslip.employeeId = :employeeId', {
-        employeeId: query.employeeId,
-      });
-    }
-
-    if (query.payrollId) {
-      queryBuilder.andWhere('payslip.payrollId = :payrollId', {
-        payrollId: query.payrollId,
-      });
-    }
-
-    if (query.status) {
-      queryBuilder.andWhere('payslip.status = :status', {
-        status: query.status,
-      });
-    }
-
-    if (search) {
-      queryBuilder.andWhere(
-        new Brackets((qb) => {
-          qb.where('employee.name ILIKE :search', {
-            search: `%${search}%`,
-          })
-            .orWhere('employee.email ILIKE :search', {
-              search: `%${search}%`,
-            })
-            .orWhere('payroll.accountName ILIKE :search', {
-              search: `%${search}%`,
-            })
-            .orWhere('payroll.accountNumber ILIKE :search', {
-              search: `%${search}%`,
-            });
-        }),
-      );
-    }
+    const queryBuilder = this.buildListQuery(query);
 
     queryBuilder
       .orderBy(`payslip.${sortBy}`, order)
@@ -152,6 +145,26 @@ export class PayslipsService {
     );
     response.meta = PaginationMetaDto.fromTotal(total, page, limit);
     return response;
+  }
+
+  /**
+   * Export matching the list filters (`page`/`limit` ignored),
+   * capped at `EXPORT_ROW_LIMIT` rows.
+   */
+  async exportToExcel(query: FindPayslipsQueryDto): Promise<Buffer> {
+    const sortBy = PAYSLIP_SORT_COLUMNS[query.sortBy ?? 'date'];
+    const order = query.order ?? 'DESC';
+
+    const payslips = await this.buildListQuery(query)
+      .orderBy(`payslip.${sortBy}`, order)
+      .take(EXPORT_ROW_LIMIT)
+      .getMany();
+
+    return buildExcelBuffer(
+      PAYSLIP_EXPORT_HEADERS,
+      payslips.map(mapPayslipToExportRow),
+      'Payslips',
+    );
   }
 
   async findOne(id: string): Promise<PayslipResourceDto> {
@@ -244,6 +257,55 @@ export class PayslipsService {
     assertPayslipAction(payslip, PayslipAction.REJECT);
     payslip.status = PayslipStatus.REJECTED;
     return PayslipResourceDto.fromEntity(await this.payslips.save(payslip));
+  }
+
+  private buildListQuery(
+    query: FindPayslipsQueryDto,
+  ): SelectQueryBuilder<Payslip> {
+    const search = query.search?.trim();
+    const queryBuilder = this.payslips.createQueryBuilder('payslip');
+    queryBuilder
+      .leftJoinAndSelect('payslip.employee', 'employee')
+      .leftJoin('payslip.payroll', 'payroll');
+
+    if (query.employeeId) {
+      queryBuilder.andWhere('payslip.employeeId = :employeeId', {
+        employeeId: query.employeeId,
+      });
+    }
+
+    if (query.payrollId) {
+      queryBuilder.andWhere('payslip.payrollId = :payrollId', {
+        payrollId: query.payrollId,
+      });
+    }
+
+    if (query.status) {
+      queryBuilder.andWhere('payslip.status = :status', {
+        status: query.status,
+      });
+    }
+
+    if (search) {
+      queryBuilder.andWhere(
+        new Brackets((qb) => {
+          qb.where('employee.name ILIKE :search', {
+            search: `%${search}%`,
+          })
+            .orWhere('employee.email ILIKE :search', {
+              search: `%${search}%`,
+            })
+            .orWhere('payroll.accountName ILIKE :search', {
+              search: `%${search}%`,
+            })
+            .orWhere('payroll.accountNumber ILIKE :search', {
+              search: `%${search}%`,
+            });
+        }),
+      );
+    }
+
+    return queryBuilder;
   }
 
   private async findOneOrFail(id: string): Promise<Payslip> {

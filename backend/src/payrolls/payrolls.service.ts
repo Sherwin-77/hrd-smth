@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, Not, Repository } from 'typeorm';
+import { Brackets, Not, Repository, type SelectQueryBuilder } from 'typeorm';
 import { CreatePayrollDto } from './dto/create-payroll.dto.js';
 import {
   FindPayrollsQueryDto,
@@ -17,6 +17,11 @@ import { PayrollResourceDto } from './dto/payroll-resource.dto.js';
 import { PaginatedPayrollsResponseDto } from './dto/paginated-payrolls-resource.dto.js';
 import { PaginationMetaDto } from '#common/dto/pagination.dto.js';
 import { EnumResourceDto } from '#common/dto/enum-resource.dto.js';
+import {
+  EXPORT_ROW_LIMIT,
+  buildExcelBuffer,
+  type ExcelCellValue,
+} from '#common/excel/excel-export.helper.js';
 import { assertPayrollAction, PayrollAction } from './payroll.workflow.js';
 import { v7 as uuidv7 } from 'uuid';
 
@@ -37,6 +42,26 @@ const PAYROLL_SORT_COLUMNS: Record<PayrollSortField, string> = {
   created_at: 'createdAt',
   updated_at: 'updatedAt',
 };
+
+export const PAYROLL_EXPORT_HEADERS = [
+  'Employee Name',
+  'Employee Email',
+  'Account Name',
+  'Account Number',
+  'Tax %',
+  'Status',
+];
+
+export function mapPayrollToExportRow(payroll: Payroll): ExcelCellValue[] {
+  return [
+    payroll.employee?.name ?? null,
+    payroll.employee?.email ?? null,
+    payroll.accountName,
+    payroll.accountNumber,
+    Number(payroll.taxPercentage) * 100,
+    payroll.status,
+  ];
+}
 
 @Injectable()
 export class PayrollsService {
@@ -87,41 +112,8 @@ export class PayrollsService {
     const limit = query.limit ?? 10;
     const sortBy = PAYROLL_SORT_COLUMNS[query.sortBy ?? 'account_name'];
     const order = query.order ?? 'DESC';
-    const search = query.search?.trim();
 
-    const queryBuilder = this.payrolls.createQueryBuilder('payroll');
-    queryBuilder.leftJoinAndSelect('payroll.employee', 'employee');
-
-    if (query.employeeId) {
-      queryBuilder.andWhere('payroll.employeeId = :employeeId', {
-        employeeId: query.employeeId,
-      });
-    }
-
-    if (query.status) {
-      queryBuilder.andWhere('payroll.status = :status', {
-        status: query.status,
-      });
-    }
-
-    if (search) {
-      queryBuilder.andWhere(
-        new Brackets((qb) => {
-          qb.where('payroll.accountNumber ILIKE :search', {
-            search: `%${search}%`,
-          })
-            .orWhere('payroll.accountName ILIKE :search', {
-              search: `%${search}%`,
-            })
-            .orWhere('employee.name ILIKE :search', {
-              search: `%${search}%`,
-            })
-            .orWhere('employee.email ILIKE :search', {
-              search: `%${search}%`,
-            });
-        }),
-      );
-    }
+    const queryBuilder = this.buildListQuery(query);
 
     queryBuilder
       .orderBy(`payroll.${sortBy}`, order)
@@ -136,6 +128,26 @@ export class PayrollsService {
     );
     response.meta = PaginationMetaDto.fromTotal(total, page, limit);
     return response;
+  }
+
+  /**
+   * Export matching the list filters (`page`/`limit` ignored),
+   * capped at `EXPORT_ROW_LIMIT` rows.
+   */
+  async exportToExcel(query: FindPayrollsQueryDto): Promise<Buffer> {
+    const sortBy = PAYROLL_SORT_COLUMNS[query.sortBy ?? 'account_name'];
+    const order = query.order ?? 'DESC';
+
+    const payrolls = await this.buildListQuery(query)
+      .orderBy(`payroll.${sortBy}`, order)
+      .take(EXPORT_ROW_LIMIT)
+      .getMany();
+
+    return buildExcelBuffer(
+      PAYROLL_EXPORT_HEADERS,
+      payrolls.map(mapPayrollToExportRow),
+      'Payrolls',
+    );
   }
 
   async findOne(id: string): Promise<PayrollResourceDto> {
@@ -214,6 +226,47 @@ export class PayrollsService {
     assertPayrollAction(payroll, PayrollAction.DEACTIVATE);
     payroll.status = PayrollStatus.INACTIVE;
     return PayrollResourceDto.fromEntity(await this.payrolls.save(payroll));
+  }
+
+  private buildListQuery(
+    query: FindPayrollsQueryDto,
+  ): SelectQueryBuilder<Payroll> {
+    const search = query.search?.trim();
+    const queryBuilder = this.payrolls.createQueryBuilder('payroll');
+    queryBuilder.leftJoinAndSelect('payroll.employee', 'employee');
+
+    if (query.employeeId) {
+      queryBuilder.andWhere('payroll.employeeId = :employeeId', {
+        employeeId: query.employeeId,
+      });
+    }
+
+    if (query.status) {
+      queryBuilder.andWhere('payroll.status = :status', {
+        status: query.status,
+      });
+    }
+
+    if (search) {
+      queryBuilder.andWhere(
+        new Brackets((qb) => {
+          qb.where('payroll.accountNumber ILIKE :search', {
+            search: `%${search}%`,
+          })
+            .orWhere('payroll.accountName ILIKE :search', {
+              search: `%${search}%`,
+            })
+            .orWhere('employee.name ILIKE :search', {
+              search: `%${search}%`,
+            })
+            .orWhere('employee.email ILIKE :search', {
+              search: `%${search}%`,
+            });
+        }),
+      );
+    }
+
+    return queryBuilder;
   }
 
   private async findOneOrFail(id: string): Promise<Payroll> {

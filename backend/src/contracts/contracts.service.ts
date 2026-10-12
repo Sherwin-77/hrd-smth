@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, Repository } from 'typeorm';
+import { Brackets, Repository, type SelectQueryBuilder } from 'typeorm';
 import { CreateContractDto } from './dto/create-contract.dto.js';
 import {
   ContractSortField,
@@ -23,6 +23,12 @@ import { ContractResourceDto } from './dto/contract-resource.dto.js';
 import { PaginatedContractsResponseDto } from './dto/paginated-contracts-resource.dto.js';
 import { PaginationMetaDto } from '#common/dto/pagination.dto.js';
 import { EnumResourceDto } from '#common/dto/enum-resource.dto.js';
+import {
+  EXPORT_ROW_LIMIT,
+  buildExcelBuffer,
+  toExcelDate,
+  type ExcelCellValue,
+} from '#common/excel/excel-export.helper.js';
 import { assertContractAction, ContractAction } from './contract.workflow.js';
 import { v7 as uuidv7 } from 'uuid';
 
@@ -34,6 +40,32 @@ const CONTRACT_SORT_COLUMNS: Record<ContractSortField, string> = {
   created_at: 'createdAt',
   updated_at: 'updatedAt',
 };
+
+export const CONTRACT_EXPORT_HEADERS = [
+  'Employee Name',
+  'Employee Email',
+  'Title',
+  'Type',
+  'Start Date',
+  'End Date',
+  'Signed Date',
+  'Status',
+];
+
+export function mapContractToExportRow(
+  contract: Contract,
+): ExcelCellValue[] {
+  return [
+    contract.employee?.name ?? null,
+    contract.employee?.email ?? null,
+    contract.title,
+    contract.type,
+    toExcelDate(contract.startDate),
+    toExcelDate(contract.endDate),
+    toExcelDate(contract.signedDate),
+    contract.status,
+  ];
+}
 
 @Injectable()
 export class ContractsService {
@@ -88,46 +120,10 @@ export class ContractsService {
   ): Promise<PaginatedContractsResponseDto> {
     const page = query.page ?? 1;
     const limit = query.limit ?? 10;
-    const sortBy = CONTRACT_SORT_COLUMNS[query.sortBy ?? 'title'];
+    const sortBy = CONTRACT_SORT_COLUMNS[query.sortBy ?? 'created_at'];
     const order = query.order ?? 'DESC';
-    const search = query.search?.trim();
 
-    const queryBuilder = this.contracts.createQueryBuilder('contract');
-    queryBuilder.leftJoinAndSelect('contract.employee', 'employee');
-
-    if (query.employeeId) {
-      queryBuilder.andWhere('contract.employeeId = :employeeId', {
-        employeeId: query.employeeId,
-      });
-    }
-
-    if (query.status) {
-      queryBuilder.andWhere('contract.status = :status', {
-        status: query.status,
-      });
-    }
-
-    if (query.type) {
-      queryBuilder.andWhere('contract.type = :type', {
-        type: query.type,
-      });
-    }
-
-    if (search) {
-      queryBuilder.andWhere(
-        new Brackets((qb) => {
-          qb.where('contract.title ILIKE :search', {
-            search: `%${search}%`,
-          })
-            .orWhere('employee.name ILIKE :search', {
-              search: `%${search}%`,
-            })
-            .orWhere('employee.email ILIKE :search', {
-              search: `%${search}%`,
-            });
-        }),
-      );
-    }
+    const queryBuilder = this.buildListQuery(query);
 
     queryBuilder
       .orderBy(`contract.${sortBy}`, order)
@@ -142,6 +138,26 @@ export class ContractsService {
     );
     response.meta = PaginationMetaDto.fromTotal(total, page, limit);
     return response;
+  }
+
+  /**
+   * Export matching the list filters (`page`/`limit` ignored),
+   * capped at `EXPORT_ROW_LIMIT` rows.
+   */
+  async exportToExcel(query: FindContractsQueryDto): Promise<Buffer> {
+    const sortBy = CONTRACT_SORT_COLUMNS[query.sortBy ?? 'created_at'];
+    const order = query.order ?? 'DESC';
+
+    const contracts = await this.buildListQuery(query)
+      .orderBy(`contract.${sortBy}`, order)
+      .take(EXPORT_ROW_LIMIT)
+      .getMany();
+
+    return buildExcelBuffer(
+      CONTRACT_EXPORT_HEADERS,
+      contracts.map(mapContractToExportRow),
+      'Contracts',
+    );
   }
 
   async findOne(id: string): Promise<ContractResourceDto> {
@@ -257,6 +273,50 @@ export class ContractsService {
     assertContractAction(contract, ContractAction.VOID);
     contract.status = ContractStatus.VOIDED;
     return ContractResourceDto.fromEntity(await this.contracts.save(contract));
+  }
+
+  private buildListQuery(
+    query: FindContractsQueryDto,
+  ): SelectQueryBuilder<Contract> {
+    const search = query.search?.trim();
+    const queryBuilder = this.contracts.createQueryBuilder('contract');
+    queryBuilder.leftJoinAndSelect('contract.employee', 'employee');
+
+    if (query.employeeId) {
+      queryBuilder.andWhere('contract.employeeId = :employeeId', {
+        employeeId: query.employeeId,
+      });
+    }
+
+    if (query.status) {
+      queryBuilder.andWhere('contract.status = :status', {
+        status: query.status,
+      });
+    }
+
+    if (query.type) {
+      queryBuilder.andWhere('contract.type = :type', {
+        type: query.type,
+      });
+    }
+
+    if (search) {
+      queryBuilder.andWhere(
+        new Brackets((qb) => {
+          qb.where('contract.title ILIKE :search', {
+            search: `%${search}%`,
+          })
+            .orWhere('employee.name ILIKE :search', {
+              search: `%${search}%`,
+            })
+            .orWhere('employee.email ILIKE :search', {
+              search: `%${search}%`,
+            });
+        }),
+      );
+    }
+
+    return queryBuilder;
   }
 
   private async findOneOrFail(id: string): Promise<Contract> {
