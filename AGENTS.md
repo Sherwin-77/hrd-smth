@@ -78,7 +78,7 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 ### Database
 
 - TypeORM CLI scripts use the ESM runner (`typeorm-ts-node-esm -d ./src/data-source.ts`), which loads the `.ts` data source correctly. `make:migration`, `migrate:up`, and `migrate:down` still need a live Postgres (they fail with `ECONNREFUSED` without one), so do not assume a schema change was applied just because the script was invoked.
-- DB config is **duplicated** in two files that must stay in sync: `TypeOrmModule.forRoot(...)` in `src/app.module.ts` and the `DataSource` in `src/data-source.ts`. Env is read straight off `process.env` (`DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`), not via `ConfigService`.
+- DB config is **duplicated** in two files that must stay in sync: `TypeOrmModule.forRoot(...)` in `src/app.module.ts` and the `DataSource` in `src/data-source.ts`. Env is read straight off `process.env` (`DB_HOST`, `DB_PORT`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`), not via `ConfigService`.
 - `synchronize: false` and `migrationsRun` is never set, so the app neither auto-creates the schema nor auto-applies migrations on boot. `src/database/migrations/` and `src/data-source.ts` globs `src/database/migrations/*{.ts,.js}`.
 
 ## Frontend
@@ -116,4 +116,4 @@ Verification order that matters: `npm run build` → `npm run lint` → `npm tes
 
 ## Ports and env
 
-`db` 5432, `backend` 3001, `frontend` 3000. Docker service hostnames differ from browser-facing URLs: inside the compose network the backend is `http://backend:3001`, but the browser needs `http://localhost:3001` — hence the separate `INTERNAL_API_URL` and `NEXT_PUBLIC_API_URL` in compose. For a local non-Docker run, `backend/.env` is gitignored local config and `backend/.env.example` is its template (empty `DB_*`, filled `SEED_SUPERADMIN_*` defaults for the starter superadmin); when unset, the code falls back to `localhost:5432`, `postgres`/`secret`, database `hrd` (see `src/data-source.ts` and `src/app.module.ts`). `npm run seed` is the idempotent superadmin seed (reads `SEED_SUPERADMIN_*`).
+`db` 5432, `backend` 3001, `frontend` 3000. Docker service hostnames differ from browser-facing URLs: inside the compose network the backend is `http://backend:3001`, but the browser needs `http://localhost:3001` — hence the separate `INTERNAL_API_URL` and `NEXT_PUBLIC_API_URL` in compose. For a local non-Docker run, `backend/.env` is gitignored local config and `backend/.env.example` is its template (empty `DB_*` and `POSTGRES_*`, filled `SEED_SUPERADMIN_*` defaults for the starter superadmin); when unset, the code falls back to `localhost:5432`, `postgres`/`secret`, database `hrd` (see `src/data-source.ts` and `src/app.module.ts`). `npm run seed` is the idempotent superadmin seed (reads `SEED_SUPERADMIN_*`).

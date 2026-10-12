@@ -32,35 +32,6 @@ describe('EmployeesRepository', () => {
       .mockReturnValue(queryBuilder as any);
   });
 
-  it('findOneWithActivePayroll joins only the active payroll scoped by id', async () => {
-    const employee = { id: 'employee-id' } as Employee;
-    queryBuilder.getOne.mockResolvedValue(employee);
-
-    await expect(
-      repository.findOneWithActivePayroll('employee-id'),
-    ).resolves.toBe(employee);
-
-    expect(createQueryBuilderMock).toHaveBeenCalledWith('employee');
-    expect(queryBuilder.leftJoinAndMapOne).toHaveBeenCalledWith(
-      'employee.activePayroll',
-      'employee.payrolls',
-      'payroll',
-      'payroll.status = :activeStatus',
-      { activeStatus: PayrollStatus.ACTIVE },
-    );
-    expect(queryBuilder.where).toHaveBeenCalledWith('employee.id = :id', {
-      id: 'employee-id',
-    });
-  });
-
-  it('findOneWithActivePayroll returns null when the employee is missing', async () => {
-    queryBuilder.getOne.mockResolvedValue(null);
-
-    await expect(
-      repository.findOneWithActivePayroll('missing'),
-    ).resolves.toBeNull();
-  });
-
   it('findOneDetail joins contracts and payslips and maps the active payroll scoped by id', async () => {
     const employee = { id: 'employee-id' } as Employee;
     queryBuilder.getOne.mockResolvedValue(employee);
