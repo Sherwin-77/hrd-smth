@@ -26,12 +26,6 @@ export class EmployeesRepository extends Repository<Employee> {
     );
   }
 
-  findOneWithActivePayroll(id: string): Promise<Employee | null> {
-    return this.createQueryBuilderWithActivePayroll('employee')
-      .where('employee.id = :id', { id })
-      .getOne();
-  }
-
   /**
    * Full detail query for the employee show endpoint: active payroll plus
    * the employee's payslips and contracts. Soft-deleted rows are excluded.
