@@ -10,6 +10,7 @@ function mockQueryBuilder(result: {
   rawMany?: unknown[];
   many?: unknown[];
   count?: number;
+  exists?: boolean
 }) {
   return {
     select: vi.fn().mockReturnThis(),
@@ -19,6 +20,7 @@ function mockQueryBuilder(result: {
     getRawMany: vi.fn().mockResolvedValue(result.rawMany ?? []),
     getMany: vi.fn().mockResolvedValue(result.many ?? []),
     getCount: vi.fn().mockResolvedValue(result.count ?? 0),
+    getExists: vi.fn().mockResolvedValue(result.exists ?? false),
   };
 }
 

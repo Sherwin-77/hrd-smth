@@ -226,14 +226,13 @@ export class RbacService {
   }
 
   async isSuperadmin(employeeId: string): Promise<boolean> {
-    const count = await this.employeeRoles
+    return await this.employeeRoles
       .createQueryBuilder('employeeRole')
       .innerJoin(Role, 'role', 'role.id = employeeRole.roleId')
       .where('employeeRole.employeeId = :employeeId', { employeeId })
       .andWhere('role.name = :name', { name: SUPERADMIN_ROLE_NAME })
       .andWhere('role.is_system = :isSystem', { isSystem: true })
-      .getCount();
-    return count > 0;
+      .getExists();
   }
 
   /**
